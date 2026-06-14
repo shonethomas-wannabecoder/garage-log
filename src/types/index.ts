@@ -61,6 +61,7 @@ export interface ParsedInvoiceJson {
   shop_name?: string | null
   invoice_number?: string | null
   total_cents?: number | null
+  advisor_notes?: string | null
   line_items?: Array<{
     description?: string
     category?: string

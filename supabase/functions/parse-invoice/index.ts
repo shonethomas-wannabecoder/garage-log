@@ -26,6 +26,7 @@ interface ParsedInvoice {
   shop_name: string | null
   invoice_number: string | null
   total_cents: number | null
+  advisor_notes: string | null
   line_items: ParsedLineItem[]
   parse_error?: string
 }
@@ -69,6 +70,8 @@ function sanitizeParsed(data: Record<string, unknown>): ParsedInvoice {
     invoice_number:
       typeof data.invoice_number === 'string' ? data.invoice_number.trim() || null : null,
     total_cents: data.total_cents != null ? Math.round(Number(data.total_cents)) : null,
+    advisor_notes:
+      typeof data.advisor_notes === 'string' ? data.advisor_notes.trim() || null : null,
     line_items,
   }
 }
@@ -82,24 +85,41 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(parts.join(''))
 }
 
-const EXTRACT_PROMPT = `Extract data from this auto repair invoice. Return ONLY valid JSON (no markdown fences) with this shape:
+const EXTRACT_PROMPT = `You are reading an auto repair shop invoice (photo or PDF).
+
+Extract every billed line item the customer paid for: parts, labor, shop supplies, fees, and tax as separate rows when shown.
+
+Rules:
+- Return ONLY valid JSON (no markdown fences).
+- Convert dollar amounts to integer cents (e.g. $89.50 → 8950).
+- service_date: YYYY-MM-DD from invoice date, or null.
+- odometer: mileage at service as a number, or null.
+- total_cents: final amount due / total paid, or null.
+- advisor_notes: free-text recommendations for future work, inspection notes, or "declined services" from the advisor — not line items already billed. Null if none.
+- Each line_items row needs description, category, item_type, quantity, line_total_cents.
+- category: one of ${CATEGORIES.join('|')}. Use oil_fluid for oil changes and fluids; brakes for pads/rotors; tires for tire work; inspection for multipoint/inspection fees.
+- item_type: one of ${ITEM_TYPES.join('|')}.
+- Skip subtotal rows; include tax as item_type "tax" if listed separately.
+- If handwriting is unclear, use your best guess and keep descriptions short.
+
+JSON shape:
 {
   "service_date": "YYYY-MM-DD or null",
   "odometer": number or null,
   "shop_name": string or null,
   "invoice_number": string or null,
   "total_cents": integer cents or null,
+  "advisor_notes": string or null,
   "line_items": [
     {
       "description": string,
-      "category": one of ${CATEGORIES.join('|')},
-      "item_type": one of ${ITEM_TYPES.join('|')},
+      "category": string,
+      "item_type": string,
       "quantity": number,
       "line_total_cents": integer cents or null
     }
   ]
-}
-Use category "other" when unsure. Convert dollar amounts to cents.`
+}`
 
 function extractJson(text: string): Record<string, unknown> {
   const trimmed = text.trim()
@@ -169,6 +189,7 @@ function emptyParsed(parseError: string): ParsedInvoice {
     shop_name: null,
     invoice_number: null,
     total_cents: null,
+    advisor_notes: null,
     line_items: [],
     parse_error: parseError,
   }
@@ -239,6 +260,18 @@ Deno.serve(async (req) => {
     }
 
     const bytes = new Uint8Array(await fileData.arrayBuffer())
+    const maxBytes = 4_500_000
+    if (!mimeType.includes('pdf') && bytes.length > maxBytes) {
+      const parsed = emptyParsed(
+        'Photo is too large to parse. Retake closer to the bill or use Replace photo — we compress on upload.',
+      )
+      await admin.from('service_visits').update({
+        raw_parse_json: parsed,
+        parse_status: 'needs_review',
+      }).eq('id', visit_id)
+      return ok({ ok: true, parsed })
+    }
+
     const base64 = toBase64(bytes)
 
     let parsed: ParsedInvoice
@@ -261,6 +294,7 @@ Deno.serve(async (req) => {
         shop_name: parsed.shop_name,
         invoice_number: parsed.invoice_number,
         total_cents: parsed.total_cents,
+        advisor_notes: parsed.advisor_notes,
         raw_parse_json: parsed,
         parse_status: 'needs_review',
       })

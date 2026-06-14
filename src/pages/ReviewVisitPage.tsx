@@ -45,14 +45,24 @@ function applyVisitToForm(visit: ServiceVisit, lineItems: LineItem[]) {
     shopName: visit.shop_name ?? '',
     invoiceNumber: visit.invoice_number ?? '',
     totalDollars: visit.total_cents != null ? (visit.total_cents / 100).toFixed(2) : '',
-    advisorNotes: visit.advisor_notes ?? '',
+    advisorNotes:
+      visit.advisor_notes?.trim() ||
+      visit.raw_parse_json?.advisor_notes?.trim() ||
+      '',
     lines,
   }
 }
 
 function hasParsedContent(visit: ServiceVisit, lines: LineItemDraft[]): boolean {
   if (lines.some((l) => l.description.trim())) return true
-  return Boolean(visit.shop_name || visit.invoice_number || visit.total_cents || visit.odometer)
+  return Boolean(
+    visit.shop_name ||
+      visit.invoice_number ||
+      visit.total_cents ||
+      visit.odometer ||
+      visit.advisor_notes ||
+      visit.raw_parse_json?.advisor_notes,
+  )
 }
 
 export function ReviewVisitPage() {

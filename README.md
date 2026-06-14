@@ -41,13 +41,24 @@ Phone-first PWA to log car repair invoices and pull up your last service at the 
    ```bash
    supabase login
    supabase link --project-ref YOUR_PROJECT_REF
-   supabase secrets set ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
-   supabase functions deploy parse-invoice
+   supabase secrets set ANTHROPIC_API_KEY=sk-ant-your-anthropic-key --project-ref YOUR_PROJECT_REF
+   npm run supabase:deploy
+   ```
+
+   Or deploy manually:
+
+   ```bash
+   supabase functions deploy parse-invoice --project-ref YOUR_PROJECT_REF
    ```
 
    `YOUR_PROJECT_REF` is the ID in your dashboard URL (`https://supabase.com/dashboard/project/XXXX`).
 
    Get an Anthropic API key at [console.anthropic.com](https://console.anthropic.com).
+
+   **Tips for best results**
+   - Use **Take photo** on iPhone (camera JPEG parses more reliably than library HEIC).
+   - After changing the parser, redeploy `parse-invoice` (step above).
+   - On the review screen, tap **Retry parse** if the first read was empty.
 
 5. **Run**
 
