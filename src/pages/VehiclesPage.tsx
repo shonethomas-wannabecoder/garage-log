@@ -1,5 +1,7 @@
 import { type FormEvent, useState } from 'react'
+import { Car, Trash2 } from 'lucide-react'
 import { useHousehold } from '../contexts/HouseholdContext'
+import { PageHeader } from '../components/ui'
 
 export function VehiclesPage() {
   const { vehicles, addVehicle, deleteVehicle } = useHousehold()
@@ -33,45 +35,45 @@ export function VehiclesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">Cars</h1>
-        <p className="text-sm text-slate-400">Vehicles shared with your household.</p>
-      </header>
+    <div className="space-y-5">
+      <PageHeader title="Cars" subtitle="Vehicles shared with your household." />
 
       <ul className="space-y-2">
         {vehicles.map((v) => (
-          <li
-            key={v.id}
-            className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900 px-3 py-3"
-          >
-            <div>
-              <p className="font-medium">{v.nickname}</p>
-              <p className="text-sm text-slate-400">
-                {[v.year, v.make, v.model].filter(Boolean).join(' ') || 'No details'}
-              </p>
+          <li key={v.id} className="card flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-on-brand-soft" aria-hidden>
+                <Car size={18} />
+              </span>
+              <div>
+                <p className="font-medium">{v.nickname}</p>
+                <p className="text-sm text-muted">
+                  {[v.year, v.make, v.model].filter(Boolean).join(' ') || 'No details'}
+                </p>
+              </div>
             </div>
             <button
               type="button"
-              className="text-sm text-red-400"
+              aria-label={`Delete ${v.nickname}`}
+              className="p-1 text-faint active:text-danger"
               onClick={() => {
                 if (confirm(`Delete ${v.nickname}? All service history will be removed.`)) {
                   void deleteVehicle(v.id)
                 }
               }}
             >
-              Delete
+              <Trash2 size={18} />
             </button>
           </li>
         ))}
       </ul>
 
-      <form onSubmit={handleAdd} className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <form onSubmit={handleAdd} className="card space-y-3 p-4">
         <h2 className="font-semibold">Add vehicle</h2>
         <input
           placeholder="Nickname (e.g. Daily SUV)"
           required
-          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+          className="field"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
         />
@@ -79,29 +81,25 @@ export function VehiclesPage() {
           <input
             placeholder="Year"
             inputMode="numeric"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="field"
             value={year}
             onChange={(e) => setYear(e.target.value)}
           />
           <input
             placeholder="Make"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="field"
             value={make}
             onChange={(e) => setMake(e.target.value)}
           />
           <input
             placeholder="Model"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="field"
             value={model}
             onChange={(e) => setModel(e.target.value)}
           />
         </div>
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-lg bg-sky-600 py-2.5 font-medium disabled:opacity-50"
-        >
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <button type="submit" disabled={saving} className="btn-primary w-full py-2.5">
           {saving ? 'Adding…' : 'Add vehicle'}
         </button>
       </form>

@@ -1,3 +1,4 @@
+import { Car, ChevronDown } from 'lucide-react'
 import { useHousehold } from '../contexts/HouseholdContext'
 import type { Vehicle } from '../types'
 
@@ -6,34 +7,49 @@ function vehicleLabel(v: Vehicle): string {
   return ymm ? `${v.nickname} (${ymm})` : v.nickname
 }
 
-export function VehicleSelect() {
+export function VehicleSelect({ label = true }: { label?: boolean }) {
   const { vehicles, selectedVehicleId, setSelectedVehicleId, loading } = useHousehold()
 
-  if (loading) return <p className="text-sm text-slate-400">Loading vehicles…</p>
+  if (loading) return <p className="text-sm text-muted">Loading vehicles…</p>
   if (!vehicles.length) {
     return (
-      <p className="rounded-lg border border-dashed border-slate-700 bg-slate-900/50 p-3 text-sm text-slate-400">
-        Add a vehicle under <strong className="text-slate-200">Cars</strong> to start logging services.
-      </p>
+      <div className="card flex items-center gap-3 border-dashed p-4 text-sm text-muted">
+        <Car size={20} className="text-faint" aria-hidden />
+        <span>
+          Add a vehicle under <strong className="text-content">Cars</strong> to start logging.
+        </span>
+      </div>
     )
   }
 
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
-        Vehicle
-      </span>
-      <select
-        className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-base"
-        value={selectedVehicleId ?? ''}
-        onChange={(e) => setSelectedVehicleId(e.target.value || null)}
-      >
-        {vehicles.map((v) => (
-          <option key={v.id} value={v.id}>
-            {vehicleLabel(v)}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div>
+      {label && (
+        <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-faint">
+          Vehicle
+        </span>
+      )}
+      <div className="card relative flex items-center gap-3 px-4 py-3">
+        <span
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-on-brand-soft"
+          aria-hidden
+        >
+          <Car size={18} />
+        </span>
+        <select
+          className="peer w-full appearance-none bg-transparent pr-6 text-base font-medium text-content focus:outline-none"
+          value={selectedVehicleId ?? ''}
+          onChange={(e) => setSelectedVehicleId(e.target.value || null)}
+          aria-label="Select vehicle"
+        >
+          {vehicles.map((v) => (
+            <option key={v.id} value={v.id} className="bg-surface text-content">
+              {vehicleLabel(v)}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={18} className="pointer-events-none absolute right-4 text-faint" aria-hidden />
+      </div>
+    </div>
   )
 }

@@ -49,8 +49,26 @@ export interface ServiceVisit {
   currency: string
   advisor_notes: string | null
   parse_status: ParseStatus
+  raw_parse_json?: ParsedInvoiceJson | null
   confirmed_at: string | null
+  confirmed_by_user_id?: string | null
   created_at: string
+}
+
+export interface ParsedInvoiceJson {
+  service_date?: string | null
+  odometer?: number | null
+  shop_name?: string | null
+  invoice_number?: string | null
+  total_cents?: number | null
+  line_items?: Array<{
+    description?: string
+    category?: string
+    item_type?: string
+    quantity?: number
+    line_total_cents?: number | null
+  }>
+  parse_error?: string
 }
 
 export interface LineItem {

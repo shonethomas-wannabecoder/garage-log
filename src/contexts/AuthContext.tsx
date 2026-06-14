@@ -15,8 +15,12 @@ interface AuthContextValue {
   user: User | null
   loading: boolean
   configured: boolean
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>
+  sendEmailLogin: (email: string) => Promise<{ error: string | null }>
+  verifyEmailCode: (email: string, code: string) => Promise<{ error: string | null }>
+  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>
+  signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null }>
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>
+  updatePassword: (password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -47,13 +51,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const sendEmailLogin = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    })
+    return { error: error?.message ?? null }
+  }, [])
+
+  const verifyEmailCode = useCallback(async (email: string, code: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: 'email',
+    })
+    return { error: error?.message ?? null }
+  }, [])
+
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error?.message ?? null }
   }, [])
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUpWithPassword = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ email, password })
+    return { error: error?.message ?? null }
+  }, [])
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    return { error: error?.message ?? null }
+  }, [])
+
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password })
     return { error: error?.message ?? null }
   }, [])
 
@@ -67,11 +103,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       loading,
       configured: isSupabaseConfigured,
-      signIn,
-      signUp,
+      sendEmailLogin,
+      verifyEmailCode,
+      signInWithPassword,
+      signUpWithPassword,
+      requestPasswordReset,
+      updatePassword,
       signOut,
     }),
-    [session, loading, signIn, signUp, signOut],
+    [session, loading, sendEmailLogin, verifyEmailCode, signInWithPassword, signUpWithPassword, requestPasswordReset, updatePassword, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

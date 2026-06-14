@@ -4,6 +4,81 @@
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Semantic tokens resolved at runtime so they flip with the .dark class */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-content: var(--content);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand-soft: var(--on-brand-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-on-warn-soft: var(--on-warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-on-danger-soft: var(--on-danger-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-on-ok-soft: var(--on-ok-soft);
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --line: #e4e7ec;
+  --line-strong: #cfd5de;
+  --content: #101828;
+  --muted: #586173;
+  --faint: #8a93a3;
+  --brand: #2563eb;
+  --brand-fg: #ffffff;
+  --brand-soft: #e7eefe;
+  --on-brand-soft: #1d4ed8;
+  --warn: #c2790b;
+  --warn-soft: #fbf0d9;
+  --on-warn-soft: #8a5206;
+  --danger: #dc2626;
+  --danger-soft: #fceaea;
+  --on-danger-soft: #a01b1b;
+  --ok: #16a34a;
+  --ok-soft: #e6f5ec;
+  --on-ok-soft: #11713a;
+}
+
+html.dark {
+  color-scheme: dark;
+  --bg: #090d15;
+  --surface: #121826;
+  --surface-2: #1b2433;
+  --line: #232c3d;
+  --line-strong: #34405a;
+  --content: #e8edf5;
+  --muted: #9aa7bb;
+  --faint: #62708a;
+  --brand: #3b82f6;
+  --brand-fg: #ffffff;
+  --brand-soft: #16233f;
+  --on-brand-soft: #9cc2ff;
+  --warn: #e0a13a;
+  --warn-soft: #2c2210;
+  --on-warn-soft: #f0c074;
+  --danger: #f0696a;
+  --danger-soft: #2c1618;
+  --on-danger-soft: #f5a3a3;
+  --ok: #4ade80;
+  --ok-soft: #102619;
+  --on-ok-soft: #86e0a8;
+}
+
 html,
 body,
 #root {
@@ -11,7 +86,7 @@ body,
 }
 
 body {
-  @apply bg-slate-950 text-slate-100 antialiased;
+  @apply bg-bg text-content antialiased;
 }
 
 input,
@@ -19,4 +94,106 @@ select,
 textarea,
 button {
   font: inherit;
+}
+
+/* Category chip colors — one ramp per category group, light + dark aware */
+.chip-teal {
+  --cb: #e1f5ee;
+  --cf: #0f6e56;
+}
+.chip-coral {
+  --cb: #faece7;
+  --cf: #993c1d;
+}
+.chip-gray {
+  --cb: #eef1f5;
+  --cf: #444441;
+}
+.chip-amber {
+  --cb: #faeeda;
+  --cf: #854f0b;
+}
+.chip-green {
+  --cb: #eaf3de;
+  --cf: #3b6d11;
+}
+.chip-purple {
+  --cb: #eeedfe;
+  --cf: #3c3489;
+}
+.chip-blue {
+  --cb: #e6f1fb;
+  --cf: #0c447c;
+}
+.chip-pink {
+  --cb: #fbeaf0;
+  --cf: #72243e;
+}
+.chip-red {
+  --cb: #fcebeb;
+  --cf: #a32d2d;
+}
+html.dark .chip-teal {
+  --cb: #0c2b24;
+  --cf: #5dcaa5;
+}
+html.dark .chip-coral {
+  --cb: #2e1610;
+  --cf: #f0997b;
+}
+html.dark .chip-gray {
+  --cb: #1c2533;
+  --cf: #b4b2a9;
+}
+html.dark .chip-amber {
+  --cb: #2e2206;
+  --cf: #ef9f27;
+}
+html.dark .chip-green {
+  --cb: #18280a;
+  --cf: #97c459;
+}
+html.dark .chip-purple {
+  --cb: #1c1840;
+  --cf: #afa9ec;
+}
+html.dark .chip-blue {
+  --cb: #0e2236;
+  --cf: #85b7eb;
+}
+html.dark .chip-pink {
+  --cb: #2c1019;
+  --cf: #ed93b1;
+}
+html.dark .chip-red {
+  --cb: #2c1212;
+  --cf: #f09595;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    background: var(--cb);
+    color: var(--cf);
+  }
+  .field {
+    @apply w-full rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-content placeholder:text-faint;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/50;
+  }
+  .btn-primary {
+    @apply rounded-xl bg-brand py-3 font-medium text-brand-fg transition-opacity active:opacity-80 disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply rounded-xl border border-line bg-surface py-2.5 font-medium text-content transition-colors active:bg-surface-2;
+  }
 }

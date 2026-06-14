@@ -7,10 +7,14 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supabase:login": "supabase login",
+    "supabase:deploy": "supabase functions deploy parse-invoice --project-ref rmsqkjkpatjjpfcyjbos"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
+    "heic2any": "^0.0.4",
+    "lucide-react": "^1.18.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.16.0"
@@ -26,6 +30,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "supabase": "^2.106.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",

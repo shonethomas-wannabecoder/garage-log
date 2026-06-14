@@ -1,79 +1,232 @@
 import { type FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import { Car, Mail } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
+type Step = 'email' | 'check-email' | 'code' | 'password'
+
 export function LoginPage() {
-  const { user, loading, configured, signIn, signUp } = useAuth()
+  const { user, loading, configured, sendEmailLogin, verifyEmailCode, signInWithPassword } = useAuth()
+  const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   if (!configured) return <Navigate to="/setup" replace />
   if (!loading && user) return <Navigate to="/" replace />
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSendLogin(e: FormEvent) {
     e.preventDefault()
     setSubmitting(true)
     setError(null)
-    const result = mode === 'signin' ? await signIn(email, password) : await signUp(email, password)
-    if (result.error) setError(result.error)
-    else if (mode === 'signup') {
-      setError(null)
-      alert('Check your email to confirm your account, then sign in.')
-      setMode('signin')
-    }
+    const result = await sendEmailLogin(email)
     setSubmitting(false)
+    if (result.error) setError(result.error)
+    else setStep('check-email')
+  }
+
+  async function handleVerifyCode(e: FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    const result = await verifyEmailCode(email, code)
+    setSubmitting(false)
+    if (result.error) setError(result.error)
+  }
+
+  async function handlePasswordSignIn(e: FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    const result = await signInWithPassword(email, password)
+    setSubmitting(false)
+    if (result.error) setError(result.error)
   }
 
   return (
     <div className="flex min-h-full flex-col justify-center px-4 py-12">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="text-2xl font-bold tracking-tight">Garage Log</h1>
-        <p className="mt-1 text-slate-400">Repair history for your household</p>
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-on-brand-soft">
+            <Car size={26} aria-hidden />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">Garage Log</h1>
+          <p className="mt-1 text-muted">Your repair history, always handy</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <label className="block">
-            <span className="text-sm text-slate-400">Email</span>
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm text-slate-400">Password</span>
-            <input
-              type="password"
-              required
-              minLength={6}
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-sky-600 py-3 font-medium text-white disabled:opacity-50"
-          >
-            {submitting ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
-          </button>
-        </form>
+        {step === 'email' && (
+          <form onSubmit={handleSendLogin} className="space-y-4">
+            <label className="block">
+              <span className="text-sm font-medium text-content">Email address</span>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                autoFocus
+                placeholder="you@example.com"
+                className="field mt-1.5 py-3"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+            <p className="text-xs text-faint">
+              We&apos;ll email you a sign-in link. No password needed.
+            </p>
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <button type="submit" disabled={submitting} className="btn-primary w-full py-3.5">
+              {submitting ? 'Sending…' : 'Continue with email'}
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm text-muted"
+              onClick={() => {
+                setStep('password')
+                setError(null)
+              }}
+            >
+              Sign in with password instead
+            </button>
+          </form>
+        )}
 
-        <button
-          type="button"
-          className="mt-4 w-full text-center text-sm text-sky-400"
-          onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-        >
-          {mode === 'signin' ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
-        </button>
+        {step === 'check-email' && (
+          <div className="space-y-4 text-center">
+            <div className="rounded-2xl border border-brand/30 bg-brand-soft p-5 text-on-brand-soft">
+              <Mail size={28} className="mx-auto" aria-hidden />
+              <p className="mt-3 font-medium">Check your email</p>
+              <p className="mt-2 text-sm opacity-90">
+                We sent a sign-in link to <span className="font-medium">{email}</span>
+              </p>
+              <p className="mt-3 text-sm opacity-90">
+                Tap the link in the email to sign in. You&apos;ll land back here automatically.
+              </p>
+            </div>
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <button
+              type="button"
+              className="w-full text-center text-sm font-medium text-brand"
+              disabled={submitting}
+              onClick={async () => {
+                setError(null)
+                setSubmitting(true)
+                const result = await sendEmailLogin(email)
+                setSubmitting(false)
+                if (result.error) setError(result.error)
+              }}
+            >
+              {submitting ? 'Sending…' : 'Resend link'}
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm text-muted"
+              onClick={() => {
+                setStep('code')
+                setCode('')
+                setError(null)
+              }}
+            >
+              Have a 6-digit code instead?
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm text-faint"
+              onClick={() => {
+                setStep('email')
+                setError(null)
+              }}
+            >
+              Use a different email
+            </button>
+          </div>
+        )}
+
+        {step === 'code' && (
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <p className="text-center text-sm text-muted">
+              Enter the 6-digit code from your email (if your email included one)
+            </p>
+            <label className="block">
+              <span className="text-sm font-medium text-content">Verification code</span>
+              <input
+                type="text"
+                required
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                placeholder="123456"
+                maxLength={6}
+                pattern="[0-9]{6}"
+                className="field mt-1.5 py-3 text-center text-2xl tracking-[0.3em]"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              />
+            </label>
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <button
+              type="submit"
+              disabled={submitting || code.length < 6}
+              className="btn-primary w-full py-3.5"
+            >
+              {submitting ? 'Verifying…' : 'Sign in with code'}
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm font-medium text-brand"
+              onClick={() => {
+                setStep('check-email')
+                setCode('')
+                setError(null)
+              }}
+            >
+              Use the email link instead
+            </button>
+          </form>
+        )}
+
+        {step === 'password' && (
+          <form onSubmit={handlePasswordSignIn} className="space-y-4">
+            <label className="block">
+              <span className="text-sm font-medium text-content">Email address</span>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                className="field mt-1.5 py-3"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-content">Password</span>
+              <input
+                type="password"
+                required
+                minLength={6}
+                autoComplete="current-password"
+                className="field mt-1.5 py-3"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <button type="submit" disabled={submitting} className="btn-primary w-full py-3.5">
+              {submitting ? 'Signing in…' : 'Sign in'}
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm font-medium text-brand"
+              onClick={() => {
+                setStep('email')
+                setPassword('')
+                setError(null)
+              }}
+            >
+              Use email link instead
+            </button>
+          </form>
+        )}
       </div>
     </div>
   )

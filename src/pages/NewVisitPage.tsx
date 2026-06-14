@@ -1,11 +1,18 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useRef, useState } from 'react'
+import { Camera, ImagePlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { VehicleSelect } from '../components/VehicleSelect'
 import { useAuth } from '../contexts/AuthContext'
 import { useHousehold } from '../contexts/HouseholdContext'
-import { createVisitWithLines } from '../hooks/useVisits'
+import {
+  createPendingVisitWithFile,
+  createVisitWithLines,
+  invokeParseInvoice,
+} from '../hooks/useVisits'
+import { InvoiceFileError, prepareInvoiceFile } from '../lib/prepareInvoiceFile'
 import type { LineItemDraft, LineItemType, ServiceCategory } from '../types'
 import { CATEGORY_LABELS } from '../types'
+import { PageHeader } from '../components/ui'
 
 const emptyLine = (): LineItemDraft => ({
   description: '',
@@ -16,10 +23,13 @@ const emptyLine = (): LineItemDraft => ({
   line_total_cents: null,
 })
 
+type Mode = 'scan' | 'manual'
+
 export function NewVisitPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { household, selectedVehicleId, vehicles } = useHousehold()
+  const [mode, setMode] = useState<Mode>('scan')
   const [serviceDate, setServiceDate] = useState(new Date().toISOString().slice(0, 10))
   const [odometer, setOdometer] = useState('')
   const [shopName, setShopName] = useState('')
@@ -30,12 +40,66 @@ export function NewVisitPage() {
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const libraryInputRef = useRef<HTMLInputElement>(null)
+
+  function onFilePicked(next: File | null) {
+    setFile(next)
+    setError(null)
+  }
+
+  async function uploadAndParse(uploadFile: File) {
+    if (!selectedVehicleId || !household) return
+
+    setSaving(true)
+    setError(null)
+
+    let prepared: File
+    try {
+      prepared = await prepareInvoiceFile(uploadFile)
+    } catch (err) {
+      setSaving(false)
+      setError(
+        err instanceof InvoiceFileError
+          ? err.message
+          : 'Could not read that photo. Tap Take photo, or use Enter manually.',
+      )
+      return
+    }
+
+    const created = await createPendingVisitWithFile(selectedVehicleId, prepared, household.id)
+    if (created.error || !created.visitId) {
+      setSaving(false)
+      setError(created.error ?? 'Failed to upload')
+      return
+    }
+
+    const parsed = await invokeParseInvoice(created.visitId)
+    setSaving(false)
+
+    if (parsed.error) {
+      setError(parsed.error)
+    } else if (parsed.lineCount === 0) {
+      setError('Upload worked but nothing was read from the bill. You can retry on the next screen or fill in by hand.')
+    }
+
+    navigate(`/visits/${created.visitId}/review`)
+  }
+
+  async function handleScanSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!file) {
+      setError('Take a photo or choose an image first.')
+      return
+    }
+    await uploadAndParse(file)
+  }
 
   function updateLine(index: number, patch: Partial<LineItemDraft>) {
     setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)))
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleManualSubmit(e: FormEvent) {
     e.preventDefault()
     if (!selectedVehicleId || !user || !household) {
       setError('Select a vehicle first.')
@@ -78,161 +142,231 @@ export function NewVisitPage() {
 
   if (!vehicles.length) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold">Log service</h1>
-        <p className="mt-2 text-slate-400">Add a vehicle under Cars before logging a visit.</p>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight">Log service</h1>
+        <p className="text-muted">Add a vehicle under Cars before logging a visit.</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">Log service</h1>
-        <p className="text-sm text-slate-400">Upload the bill and enter what was done (AI parsing comes next).</p>
-      </header>
+    <div className="space-y-5">
+      <PageHeader title="Log service" subtitle="Upload a bill for AI parsing, or enter details manually." />
 
       <VehicleSelect />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="block">
-          <span className="text-sm text-slate-400">Service date</span>
+      <div className="flex gap-1 rounded-xl border border-line bg-surface-2 p-1">
+        <button
+          type="button"
+          className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+            mode === 'scan' ? 'bg-brand text-brand-fg' : 'text-muted'
+          }`}
+          onClick={() => setMode('scan')}
+        >
+          Scan bill
+        </button>
+        <button
+          type="button"
+          className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+            mode === 'manual' ? 'bg-brand text-brand-fg' : 'text-muted'
+          }`}
+          onClick={() => setMode('manual')}
+        >
+          Enter manually
+        </button>
+      </div>
+
+      {mode === 'scan' ? (
+        <form onSubmit={handleScanSubmit} className="space-y-4">
           <input
-            type="date"
-            required
-            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-            value={serviceDate}
-            onChange={(e) => setServiceDate(e.target.value)}
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const picked = e.target.files?.[0] ?? null
+              onFilePicked(picked)
+              if (picked) void uploadAndParse(picked)
+              e.target.value = ''
+            }}
           />
-        </label>
-
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="text-sm text-slate-400">Mileage</span>
-            <input
-              inputMode="numeric"
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-              value={odometer}
-              onChange={(e) => setOdometer(e.target.value)}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm text-slate-400">Total ($)</span>
-            <input
-              inputMode="decimal"
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-              value={totalDollars}
-              onChange={(e) => setTotalDollars(e.target.value)}
-            />
-          </label>
-        </div>
-
-        <label className="block">
-          <span className="text-sm text-slate-400">Shop name</span>
           <input
-            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-            value={shopName}
-            onChange={(e) => setShopName(e.target.value)}
-          />
-        </label>
-
-        <label className="block">
-          <span className="text-sm text-slate-400">Invoice #</span>
-          <input
-            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-            value={invoiceNumber}
-            onChange={(e) => setInvoiceNumber(e.target.value)}
-          />
-        </label>
-
-        <label className="block">
-          <span className="text-sm text-slate-400">Your notes (for next visit)</span>
-          <textarea
-            rows={2}
-            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-            placeholder="e.g. They pushed a transmission flush again"
-            value={advisorNotes}
-            onChange={(e) => setAdvisorNotes(e.target.value)}
-          />
-        </label>
-
-        <label className="block">
-          <span className="text-sm text-slate-400">Invoice photo or PDF</span>
-          <input
+            ref={libraryInputRef}
             type="file"
             accept="image/*,application/pdf"
-            className="mt-1 w-full text-sm"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="hidden"
+            onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
           />
-        </label>
 
-        <fieldset className="space-y-3">
-          <legend className="font-semibold">Line items</legend>
-          {lines.map((line, index) => (
-            <div key={index} className="space-y-2 rounded-lg border border-slate-800 p-3">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => cameraInputRef.current?.click()}
+              className="btn-primary flex items-center justify-center gap-2 py-3 text-sm"
+            >
+              <Camera size={18} aria-hidden />
+              Take photo
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => libraryInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-sm font-medium text-content"
+            >
+              <ImagePlus size={18} aria-hidden />
+              Choose file
+            </button>
+          </div>
+
+          {file && (
+            <p className="text-sm text-muted">
+              Selected: <span className="text-content">{file.name}</span>
+            </p>
+          )}
+
+          <p className="text-xs text-faint">
+            <strong className="text-muted">Tip:</strong> Use Take photo for iPhone bills — library photos are often HEIC and harder to read.
+          </p>
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <button type="submit" disabled={saving || !file} className="btn-primary w-full disabled:opacity-50">
+            {saving ? 'Reading invoice…' : 'Upload & parse'}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleManualSubmit} className="space-y-4">
+          <label className="block">
+            <span className="text-sm text-muted">Service date</span>
+            <input
+              type="date"
+              required
+              className="field mt-1"
+              value={serviceDate}
+              onChange={(e) => setServiceDate(e.target.value)}
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-sm text-muted">Mileage</span>
               <input
-                placeholder="Description"
-                required={index === 0}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
-                value={line.description}
-                onChange={(e) => updateLine(index, { description: e.target.value })}
+                inputMode="numeric"
+                className="field mt-1"
+                value={odometer}
+                onChange={(e) => setOdometer(e.target.value)}
               />
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-sm"
-                  value={line.category}
-                  onChange={(e) => updateLine(index, { category: e.target.value as ServiceCategory })}
-                >
-                  {Object.entries(CATEGORY_LABELS).map(([k, label]) => (
-                    <option key={k} value={k}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-sm"
-                  value={line.item_type}
-                  onChange={(e) => updateLine(index, { item_type: e.target.value as LineItemType })}
-                >
-                  <option value="part">Part</option>
-                  <option value="labor">Labor</option>
-                  <option value="fee">Fee</option>
-                  <option value="tax">Tax</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+            </label>
+            <label className="block">
+              <span className="text-sm text-muted">Total ($)</span>
               <input
                 inputMode="decimal"
-                placeholder="Line total ($)"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
-                onChange={(e) => {
-                  const v = e.target.value
-                  updateLine(index, {
-                    line_total_cents: v ? Math.round(parseFloat(v) * 100) : null,
-                  })
-                }}
+                className="field mt-1"
+                value={totalDollars}
+                onChange={(e) => setTotalDollars(e.target.value)}
               />
-            </div>
-          ))}
-          <button
-            type="button"
-            className="text-sm text-sky-400"
-            onClick={() => setLines((prev) => [...prev, emptyLine()])}
-          >
-            + Add line item
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="text-sm text-muted">Shop name</span>
+            <input className="field mt-1" value={shopName} onChange={(e) => setShopName(e.target.value)} />
+          </label>
+
+          <label className="block">
+            <span className="text-sm text-muted">Invoice #</span>
+            <input
+              className="field mt-1"
+              value={invoiceNumber}
+              onChange={(e) => setInvoiceNumber(e.target.value)}
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm text-muted">Your notes (for next visit)</span>
+            <textarea
+              rows={2}
+              className="field mt-1"
+              placeholder="e.g. They pushed a transmission flush again"
+              value={advisorNotes}
+              onChange={(e) => setAdvisorNotes(e.target.value)}
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm text-muted">Invoice photo or PDF (optional)</span>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              className="mt-1 w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-2 file:text-sm file:font-medium file:text-content"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+          </label>
+
+          <fieldset className="space-y-3">
+            <legend className="font-semibold">Line items</legend>
+            {lines.map((line, index) => (
+              <div key={index} className="card space-y-2 p-3">
+                <input
+                  placeholder="Description"
+                  required={index === 0}
+                  className="field"
+                  value={line.description}
+                  onChange={(e) => updateLine(index, { description: e.target.value })}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    className="field text-sm"
+                    value={line.category}
+                    onChange={(e) => updateLine(index, { category: e.target.value as ServiceCategory })}
+                  >
+                    {Object.entries(CATEGORY_LABELS).map(([k, label]) => (
+                      <option key={k} value={k} className="bg-surface text-content">
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="field text-sm"
+                    value={line.item_type}
+                    onChange={(e) => updateLine(index, { item_type: e.target.value as LineItemType })}
+                  >
+                    <option value="part">Part</option>
+                    <option value="labor">Labor</option>
+                    <option value="fee">Fee</option>
+                    <option value="tax">Tax</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <input
+                  inputMode="decimal"
+                  placeholder="Line total ($)"
+                  className="field"
+                  onChange={(e) => {
+                    const v = e.target.value
+                    updateLine(index, {
+                      line_total_cents: v ? Math.round(parseFloat(v) * 100) : null,
+                    })
+                  }}
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              className="text-sm font-medium text-brand"
+              onClick={() => setLines((prev) => [...prev, emptyLine()])}
+            >
+              + Add line item
+            </button>
+          </fieldset>
+
+          {error && <p className="text-sm text-danger">{error}</p>}
+
+          <button type="submit" disabled={saving} className="btn-primary w-full">
+            {saving ? 'Saving…' : 'Save visit'}
           </button>
-        </fieldset>
-
-        {error && <p className="text-sm text-red-400">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-lg bg-sky-600 py-3 font-medium disabled:opacity-50"
-        >
-          {saving ? 'Saving…' : 'Save visit'}
-        </button>
-      </form>
+        </form>
+      )}
     </div>
   )
 }

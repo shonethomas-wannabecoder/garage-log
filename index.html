@@ -7,6 +7,20 @@
     <meta name="theme-color" content="#0f172a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Garage Log</title>
+    <script>
+      (function () {
+        try {
+          var p = localStorage.getItem('garage-log-theme') || 'system';
+          var dark =
+            p === 'dark' ||
+            (p === 'system' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute('content', dark ? '#090d15' : '#f5f6f8');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

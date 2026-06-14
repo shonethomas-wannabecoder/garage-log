@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { Search } from 'lucide-react'
 import { VehicleSelect } from '../components/VehicleSelect'
 import { VisitListItem } from '../components/VisitListItem'
+import { PageHeader } from '../components/ui'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { searchVisits } from '../hooks/useVisits'
 import type { ServiceVisit } from '../types'
@@ -23,25 +25,25 @@ export function SearchPage() {
   }, [selectedVehicleId, query])
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">Search</h1>
-        <p className="text-sm text-slate-400">Find past work by keyword (brakes, oil, filter…).</p>
-      </header>
+    <div className="space-y-5">
+      <PageHeader title="Search" subtitle="Find past work by keyword (brakes, oil, filter…)." />
 
       <VehicleSelect />
 
       {vehicles.length > 0 && (
         <>
-          <input
-            type="search"
-            placeholder="Search line items…"
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <div className="relative">
+            <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" aria-hidden />
+            <input
+              type="search"
+              placeholder="Search line items…"
+              className="field pl-10"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
           {loading ? (
-            <p className="text-sm text-slate-400">Searching…</p>
+            <p className="text-sm text-muted">Searching…</p>
           ) : (
             <ul className="space-y-2">
               {results.map((v) => (
@@ -49,7 +51,7 @@ export function SearchPage() {
                   <VisitListItem visit={v} />
                 </li>
               ))}
-              {!results.length && <p className="text-sm text-slate-400">No matches.</p>}
+              {!results.length && <p className="text-sm text-muted">No matches.</p>}
             </ul>
           )}
         </>
