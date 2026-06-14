@@ -3,10 +3,18 @@ import { Navigate } from 'react-router-dom'
 import { Car, Mail } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
-type Step = 'email' | 'check-email' | 'code' | 'password'
+type Step = 'email' | 'check-email' | 'code' | 'password' | 'forgot-password' | 'forgot-password-sent'
 
 export function LoginPage() {
-  const { user, loading, configured, sendEmailLogin, verifyEmailCode, signInWithPassword } = useAuth()
+  const {
+    user,
+    loading,
+    configured,
+    sendEmailLogin,
+    verifyEmailCode,
+    signInWithPassword,
+    requestPasswordReset,
+  } = useAuth()
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -43,6 +51,16 @@ export function LoginPage() {
     const result = await signInWithPassword(email, password)
     setSubmitting(false)
     if (result.error) setError(result.error)
+  }
+
+  async function handleForgotPassword(e: FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    const result = await requestPasswordReset(email)
+    setSubmitting(false)
+    if (result.error) setError(result.error)
+    else setStep('forgot-password-sent')
   }
 
   return (
@@ -210,6 +228,19 @@ export function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </label>
+            <div className="text-right">
+              <button
+                type="button"
+                className="text-sm font-medium text-brand"
+                onClick={() => {
+                  setStep('forgot-password')
+                  setPassword('')
+                  setError(null)
+                }}
+              >
+                Forgot password?
+              </button>
+            </div>
             {error && <p className="text-sm text-danger">{error}</p>}
             <button type="submit" disabled={submitting} className="btn-primary w-full py-3.5">
               {submitting ? 'Signing in…' : 'Sign in'}
@@ -226,6 +257,81 @@ export function LoginPage() {
               Use email link instead
             </button>
           </form>
+        )}
+
+        {step === 'forgot-password' && (
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <p className="text-center text-sm text-muted">
+              Enter your email and we&apos;ll send you a link to reset your password.
+            </p>
+            <label className="block">
+              <span className="text-sm font-medium text-content">Email address</span>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                autoFocus
+                placeholder="you@example.com"
+                className="field mt-1.5 py-3"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <button type="submit" disabled={submitting} className="btn-primary w-full py-3.5">
+              {submitting ? 'Sending…' : 'Send reset link'}
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm font-medium text-brand"
+              onClick={() => {
+                setStep('password')
+                setError(null)
+              }}
+            >
+              Back to sign in
+            </button>
+          </form>
+        )}
+
+        {step === 'forgot-password-sent' && (
+          <div className="space-y-4 text-center">
+            <div className="rounded-2xl border border-brand/30 bg-brand-soft p-5 text-on-brand-soft">
+              <Mail size={28} className="mx-auto" aria-hidden />
+              <p className="mt-3 font-medium">Check your email</p>
+              <p className="mt-2 text-sm opacity-90">
+                We sent a password reset link to <span className="font-medium">{email}</span>
+              </p>
+              <p className="mt-3 text-sm opacity-90">
+                Tap the link in the email to choose a new password.
+              </p>
+            </div>
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <button
+              type="button"
+              className="w-full text-center text-sm font-medium text-brand"
+              disabled={submitting}
+              onClick={async () => {
+                setError(null)
+                setSubmitting(true)
+                const result = await requestPasswordReset(email)
+                setSubmitting(false)
+                if (result.error) setError(result.error)
+              }}
+            >
+              {submitting ? 'Sending…' : 'Resend reset link'}
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm text-muted"
+              onClick={() => {
+                setStep('password')
+                setError(null)
+              }}
+            >
+              Back to sign in
+            </button>
+          </div>
         )}
       </div>
     </div>
