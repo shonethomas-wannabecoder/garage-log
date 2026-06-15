@@ -15,7 +15,10 @@ export function AppShell() {
       <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
         <Outlet />
       </main>
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/90 backdrop-blur-md">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-line backdrop-blur-xl"
+        style={{ background: 'color-mix(in srgb, var(--bg) 72%, transparent)' }}
+      >
         <div
           className="mx-auto flex max-w-lg"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}

@@ -31,7 +31,8 @@ export function VehicleSelect({ label = true }: { label?: boolean }) {
       )}
       <div className="card relative flex items-center gap-3 px-4 py-3">
         <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-on-brand-soft"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-white"
+          style={{ background: 'var(--grad)' }}
           aria-hidden
         >
           <Car size={18} />

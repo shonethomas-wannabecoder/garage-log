@@ -29,54 +29,80 @@
   --color-on-ok-soft: var(--on-ok-soft);
 }
 
+/* ---------- Light glass ---------- */
 :root {
   color-scheme: light;
-  --bg: #f5f6f8;
-  --surface: #ffffff;
-  --surface-2: #eef1f5;
-  --line: #e4e7ec;
-  --line-strong: #cfd5de;
+  --bg: #eef1f7;
+  --page-grad: linear-gradient(180deg, #eef1f8 0%, #e8ecf4 55%, #edeff6 100%);
+  --glow1: #7aa0ff;
+  --glow2: #b59cff;
+  --glow-op: 0.35;
+  --glow-op2: 0.28;
+
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-2: rgba(255, 255, 255, 0.5);
+  --line: rgba(16, 24, 40, 0.1);
+  --line-strong: rgba(16, 24, 40, 0.2);
   --content: #101828;
-  --muted: #586173;
+  --muted: #566071;
   --faint: #8a93a3;
-  --brand: #2563eb;
+
+  --brand: #2f6bff;
   --brand-fg: #ffffff;
-  --brand-soft: #e7eefe;
+  --brand-soft: rgba(47, 107, 255, 0.12);
   --on-brand-soft: #1d4ed8;
   --warn: #c2790b;
-  --warn-soft: #fbf0d9;
+  --warn-soft: rgba(224, 161, 58, 0.16);
   --on-warn-soft: #8a5206;
   --danger: #dc2626;
-  --danger-soft: #fceaea;
+  --danger-soft: rgba(220, 38, 38, 0.12);
   --on-danger-soft: #a01b1b;
   --ok: #16a34a;
-  --ok-soft: #e6f5ec;
+  --ok-soft: rgba(22, 163, 74, 0.13);
   --on-ok-soft: #11713a;
+
+  --grad: linear-gradient(135deg, #3f6bff 0%, #6d4dff 100%);
+  --brand-glow: rgba(63, 107, 255, 0.3);
+  --card-shadow: 0 6px 22px rgba(16, 24, 40, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --card-blur: blur(16px) saturate(140%);
 }
 
+/* ---------- Dark glass ---------- */
 html.dark {
   color-scheme: dark;
-  --bg: #090d15;
-  --surface: #121826;
-  --surface-2: #1b2433;
-  --line: #232c3d;
-  --line-strong: #34405a;
-  --content: #e8edf5;
-  --muted: #9aa7bb;
-  --faint: #62708a;
-  --brand: #3b82f6;
+  --bg: #0b0f1d;
+  --page-grad: linear-gradient(180deg, #0c1124 0%, #090c17 55%, #07090f 100%);
+  --glow1: #3b5bff;
+  --glow2: #7c4dff;
+  --glow-op: 0.55;
+  --glow-op2: 0.4;
+
+  --surface: rgba(255, 255, 255, 0.055);
+  --surface-2: rgba(255, 255, 255, 0.038);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.2);
+  --content: #eef2fb;
+  --muted: #aab3c5;
+  --faint: #7e879b;
+
+  --brand: #5b8cff;
   --brand-fg: #ffffff;
-  --brand-soft: #16233f;
-  --on-brand-soft: #9cc2ff;
-  --warn: #e0a13a;
-  --warn-soft: #2c2210;
-  --on-warn-soft: #f0c074;
+  --brand-soft: rgba(91, 140, 255, 0.16);
+  --on-brand-soft: #bcd0ff;
+  --warn: #e9b45f;
+  --warn-soft: rgba(240, 180, 80, 0.13);
+  --on-warn-soft: #f3c887;
   --danger: #f0696a;
-  --danger-soft: #2c1618;
-  --on-danger-soft: #f5a3a3;
-  --ok: #4ade80;
-  --ok-soft: #102619;
+  --danger-soft: rgba(240, 105, 106, 0.15);
+  --on-danger-soft: #f6a6a6;
+  --ok: #54d98c;
+  --ok-soft: rgba(84, 217, 140, 0.15);
   --on-ok-soft: #86e0a8;
+
+  --grad: linear-gradient(135deg, #3f6bff 0%, #7551ff 100%);
+  --brand-glow: rgba(74, 93, 255, 0.4);
+  --card-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --card-blur: blur(16px) saturate(130%);
 }
 
 html,
@@ -86,7 +112,36 @@ body,
 }
 
 body {
-  @apply bg-bg text-content antialiased;
+  @apply text-content antialiased;
+  background: var(--page-grad);
+  background-attachment: fixed;
+}
+
+/* Soft ambient glows behind everything */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+}
+body::before {
+  top: -90px;
+  right: -70px;
+  width: 300px;
+  height: 300px;
+  background: var(--glow1);
+  opacity: var(--glow-op);
+}
+body::after {
+  top: 32%;
+  left: -90px;
+  width: 260px;
+  height: 260px;
+  background: var(--glow2);
+  opacity: var(--glow-op2);
 }
 
 input,
@@ -96,7 +151,7 @@ button {
   font: inherit;
 }
 
-/* Category chip colors — one ramp per category group, light + dark aware */
+/* Category chip colors */
 .chip-teal {
   --cb: #e1f5ee;
   --cf: #0f6e56;
@@ -134,45 +189,50 @@ button {
   --cf: #a32d2d;
 }
 html.dark .chip-teal {
-  --cb: #0c2b24;
-  --cf: #5dcaa5;
+  --cb: rgba(93, 202, 165, 0.16);
+  --cf: #7fe0c4;
 }
 html.dark .chip-coral {
-  --cb: #2e1610;
-  --cf: #f0997b;
+  --cb: rgba(240, 153, 123, 0.16);
+  --cf: #f3ab93;
 }
 html.dark .chip-gray {
-  --cb: #1c2533;
-  --cf: #b4b2a9;
+  --cb: rgba(180, 178, 169, 0.16);
+  --cf: #c6cbd4;
 }
 html.dark .chip-amber {
-  --cb: #2e2206;
-  --cf: #ef9f27;
+  --cb: rgba(239, 159, 39, 0.16);
+  --cf: #f0b860;
 }
 html.dark .chip-green {
-  --cb: #18280a;
-  --cf: #97c459;
+  --cb: rgba(151, 196, 89, 0.16);
+  --cf: #b6dd84;
 }
 html.dark .chip-purple {
-  --cb: #1c1840;
-  --cf: #afa9ec;
+  --cb: rgba(175, 169, 236, 0.18);
+  --cf: #c7c2f3;
 }
 html.dark .chip-blue {
-  --cb: #0e2236;
-  --cf: #85b7eb;
+  --cb: rgba(133, 183, 235, 0.16);
+  --cf: #a9ccff;
 }
 html.dark .chip-pink {
-  --cb: #2c1019;
-  --cf: #ed93b1;
+  --cb: rgba(237, 147, 177, 0.16);
+  --cf: #f1aec6;
 }
 html.dark .chip-red {
-  --cb: #2c1212;
-  --cf: #f09595;
+  --cb: rgba(240, 149, 149, 0.16);
+  --cf: #f3a3a3;
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-line bg-surface;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    backdrop-filter: var(--card-blur);
+    -webkit-backdrop-filter: var(--card-blur);
+    box-shadow: var(--card-shadow);
   }
   .chip {
     display: inline-flex;
@@ -185,15 +245,34 @@ html.dark .chip-red {
     line-height: 1.2;
     background: var(--cb);
     color: var(--cf);
+    border: 1px solid var(--line);
   }
   .field {
-    @apply w-full rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-content placeholder:text-faint;
+    @apply w-full rounded-xl px-3 py-2.5 text-content placeholder:text-faint;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     @apply focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/50;
   }
   .btn-primary {
-    @apply rounded-xl bg-brand py-3 font-medium text-brand-fg transition-opacity active:opacity-80 disabled:opacity-50;
+    @apply rounded-xl py-3 font-medium text-white transition-opacity active:opacity-85 disabled:opacity-50;
+    background: var(--grad);
+    box-shadow: 0 8px 22px var(--brand-glow);
   }
   .btn-ghost {
-    @apply rounded-xl border border-line bg-surface py-2.5 font-medium text-content transition-colors active:bg-surface-2;
+    @apply rounded-xl py-2.5 font-medium text-content transition-colors;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    backdrop-filter: var(--card-blur);
+    -webkit-backdrop-filter: var(--card-blur);
+  }
+  .accent-banner {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    background: var(--grad);
+    color: #fff;
+    box-shadow: 0 10px 30px var(--brand-glow);
   }
 }

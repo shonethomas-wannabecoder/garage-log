@@ -53,15 +53,12 @@ export function HomePage() {
 
       {vehicles.length > 0 && (
         <>
-          <Link
-            to="/compare"
-            className="block rounded-2xl border border-brand/30 bg-brand-soft p-4 active:opacity-90"
-          >
-            <div className="flex items-center gap-2 text-on-brand-soft">
+          <Link to="/compare" className="accent-banner block p-4 active:opacity-95">
+            <div className="flex items-center gap-2 text-white">
               <ClipboardCheck size={18} aria-hidden />
               <span className="text-base font-semibold">Compare a quote</span>
             </div>
-            <p className="mt-1 text-sm text-on-brand-soft/80">
+            <p className="mt-1 text-sm text-white/85">
               At the shop? Check today's recommendations against your real history.
             </p>
           </Link>
