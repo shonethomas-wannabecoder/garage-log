@@ -1,7 +1,8 @@
 import { type FormEvent, useState } from 'react'
-import { Car, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { PageHeader } from '../components/ui'
+import { BrandAvatar } from '../components/BrandAvatar'
 
 export function VehiclesPage() {
   const { vehicles, addVehicle, deleteVehicle } = useHousehold()
@@ -42,9 +43,7 @@ export function VehiclesPage() {
         {vehicles.map((v) => (
           <li key={v.id} className="card flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-on-brand-soft" aria-hidden>
-                <Car size={18} />
-              </span>
+              <BrandAvatar make={v.make} size={38} />
               <div>
                 <p className="font-medium">{v.nickname}</p>
                 <p className="text-sm text-muted">

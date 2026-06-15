@@ -1,5 +1,6 @@
 import { Car, ChevronDown } from 'lucide-react'
 import { useHousehold } from '../contexts/HouseholdContext'
+import { BrandAvatar } from './BrandAvatar'
 import type { Vehicle } from '../types'
 
 function vehicleLabel(v: Vehicle): string {
@@ -22,6 +23,8 @@ export function VehicleSelect({ label = true }: { label?: boolean }) {
     )
   }
 
+  const selected = vehicles.find((v) => v.id === selectedVehicleId)
+
   return (
     <div>
       {label && (
@@ -30,13 +33,7 @@ export function VehicleSelect({ label = true }: { label?: boolean }) {
         </span>
       )}
       <div className="card relative flex items-center gap-3 px-4 py-3">
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-white"
-          style={{ background: 'var(--grad)' }}
-          aria-hidden
-        >
-          <Car size={18} />
-        </span>
+        <BrandAvatar make={selected?.make} size={38} />
         <select
           className="peer w-full appearance-none bg-transparent pr-6 text-base font-medium text-content focus:outline-none"
           value={selectedVehicleId ?? ''}
