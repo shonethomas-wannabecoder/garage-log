@@ -71,7 +71,22 @@ export function LoginPage() {
             <Car size={26} aria-hidden />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Garage Log</h1>
-          <p className="mt-1 text-muted">Your repair history, always handy</p>
+          <p className="mt-1 text-muted">Know what was done before the shop recommends more</p>
+          <div className="card mt-5 px-4 py-3.5 text-left text-sm leading-relaxed text-muted">
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-faint">
+              Why this exists
+            </p>
+            <p>
+              Built to help the average conscious consumer hold dealers accountable for their
+              recommendations. Twice in one year, the dealership recommended — and charged for —
+              services already done on the last visit: over $400 each time, then hours the creator
+              spent disputing each bill.
+            </p>
+            <p className="mt-2 text-content">
+              Garage Log stores your repair history so you can verify what was actually done before
+              you agree to more work.
+            </p>
+          </div>
         </div>
 
         {step === 'email' && (
