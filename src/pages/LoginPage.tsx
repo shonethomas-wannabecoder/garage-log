@@ -65,26 +65,32 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-full flex-col justify-center px-4 py-12">
-      <div className="mx-auto w-full max-w-sm">
+      <div className="mx-auto w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-on-brand-soft">
             <Car size={26} aria-hidden />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Garage Log</h1>
-          <p className="mt-1 text-muted">Know what was done before the shop recommends more</p>
-          <div className="card mt-5 px-4 py-3.5 text-left text-sm leading-relaxed text-muted">
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-faint">
+          <p className="mt-1 max-w-xs mx-auto text-muted leading-snug">
+            Know what was done before the shop recommends more
+          </p>
+          <div className="card mx-auto mt-6 max-w-md border-brand/25 bg-brand-soft/40 px-5 py-4 text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-on-brand-soft">
               Why this exists
             </p>
-            <p>
+            <p className="text-[15px] leading-7 text-content/90">
               Built to help the average conscious consumer hold dealers accountable for their
-              recommendations. Twice in one year, the dealership recommended — and charged for —
-              services already done on the last visit: over $400 each time, then hours the creator
-              spent disputing each bill.
+              recommendations.
             </p>
-            <p className="mt-2 text-content">
-              Garage Log stores your repair history so you can verify what was actually done before
-              you agree to more work.
+            <p className="mt-3 text-[15px] leading-7 text-content/90">
+              Twice in one year, the dealership recommended — and charged for — services already done
+              on the last visit:{' '}
+              <span className="font-semibold text-content">over $400 each time</span>, then hours the
+              creator spent disputing each bill.
+            </p>
+            <p className="mt-3 text-[15px] font-medium leading-7 text-content">
+              Garage Log stores your repair history so you can verify what was actually done before you
+              agree to more work.
             </p>
           </div>
         </div>
