@@ -7,7 +7,7 @@ Phone-first PWA to log car repair invoices and pull up your last service at the 
 - React + TypeScript + Vite
 - Tailwind CSS
 - Supabase (auth, Postgres, storage, edge functions)
-- Anthropic Claude (invoice parsing via edge function)
+- Google Gemini Flash (invoice parsing via edge function)
 
 ## Setup
 
@@ -41,7 +41,7 @@ Phone-first PWA to log car repair invoices and pull up your last service at the 
    ```bash
    supabase login
    supabase link --project-ref YOUR_PROJECT_REF
-   supabase secrets set ANTHROPIC_API_KEY=sk-ant-your-anthropic-key --project-ref YOUR_PROJECT_REF
+   supabase secrets set GEMINI_API_KEY=your-google-ai-studio-key --project-ref YOUR_PROJECT_REF
    npm run supabase:deploy
    ```
 
@@ -53,7 +53,7 @@ Phone-first PWA to log car repair invoices and pull up your last service at the 
 
    `YOUR_PROJECT_REF` is the ID in your dashboard URL (`https://supabase.com/dashboard/project/XXXX`).
 
-   Get an Anthropic API key at [console.anthropic.com](https://console.anthropic.com).
+   Get a free API key at [Google AI Studio](https://aistudio.google.com/apikey).
 
    **Tips for best results**
    - Use **Take photo** on iPhone (camera JPEG parses more reliably than library HEIC).
@@ -119,7 +119,7 @@ Save, then test sign-in on the live site.
 
 ### 4. Invoice parsing
 
-Already runs on Supabase (edge function + `ANTHROPIC_API_KEY`). No extra deploy step for the parser — only the frontend moves to Vercel.
+Already runs on Supabase (edge function + `GEMINI_API_KEY`). No extra deploy step for the parser — only the frontend moves to Vercel.
 
 ### Alternatives
 

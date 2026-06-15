@@ -128,56 +128,57 @@ function extractJson(text: string): Record<string, unknown> {
   return JSON.parse(raw) as Record<string, unknown>
 }
 
-async function callClaude(base64: string, mimeType: string): Promise<ParsedInvoice> {
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+async function callGemini(base64: string, mimeType: string): Promise<ParsedInvoice> {
+  const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) {
     throw new Error(
-      'ANTHROPIC_API_KEY not set. Add it in Supabase → Edge Functions → Secrets, then redeploy parse-invoice.',
+      'GEMINI_API_KEY not set. Add it in Supabase → Edge Functions → Secrets, then redeploy parse-invoice.',
     )
   }
 
-  const isPdf = mimeType === 'application/pdf'
-  const mediaType = isPdf ? 'application/pdf' : mimeType
+  const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash'
+  const imageMime =
+    mimeType === 'application/pdf'
+      ? 'application/pdf'
+      : mimeType.startsWith('image/')
+        ? mimeType
+        : 'image/jpeg'
 
-  const content: Array<Record<string, unknown>> = isPdf
-    ? [
-        {
-          type: 'document',
-          source: { type: 'base64', media_type: mediaType, data: base64 },
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { inline_data: { mime_type: imageMime, data: base64 } },
+              { text: EXTRACT_PROMPT },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          maxOutputTokens: 4096,
         },
-        { type: 'text', text: EXTRACT_PROMPT },
-      ]
-    : [
-        {
-          type: 'image',
-          source: { type: 'base64', media_type: mediaType, data: base64 },
-        },
-        { type: 'text', text: EXTRACT_PROMPT },
-      ]
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'Content-Type': 'application/json',
+      }),
     },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      messages: [{ role: 'user', content }],
-    }),
-  })
+  )
 
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Claude API error: ${err.slice(0, 300)}`)
+    throw new Error(`Gemini API error: ${err.slice(0, 300)}`)
   }
 
   const payload = await res.json()
-  const textBlock = payload.content?.find((b: { type: string }) => b.type === 'text')
-  const text = textBlock?.text
-  if (!text) throw new Error('Empty response from Claude')
+  const text = payload.candidates?.[0]?.content?.parts
+    ?.map((p: { text?: string }) => p.text ?? '')
+    .join('')
+  if (!text) {
+    const blockReason = payload.candidates?.[0]?.finishReason ?? payload.promptFeedback?.blockReason
+    throw new Error(`Empty response from Gemini${blockReason ? ` (${blockReason})` : ''}`)
+  }
 
   return sanitizeParsed(extractJson(text))
 }
@@ -276,7 +277,7 @@ Deno.serve(async (req) => {
 
     let parsed: ParsedInvoice
     try {
-      parsed = await callClaude(base64, mimeType)
+      parsed = await callGemini(base64, mimeType)
     } catch (parseErr) {
       parsed = emptyParsed(parseErr instanceof Error ? parseErr.message : 'Parse failed')
     }

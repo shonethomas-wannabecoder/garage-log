@@ -315,8 +315,8 @@ export async function invokeParseInvoice(
     ) {
       msg =
         raw.includes('non-2xx')
-          ? 'Parser failed. Add ANTHROPIC_API_KEY in Supabase → Edge Functions → Secrets, then run: npx supabase functions deploy parse-invoice'
-          : 'Invoice parser is not set up yet. Deploy parse-invoice and add ANTHROPIC_API_KEY in Supabase → Edge Functions → Secrets.'
+          ? 'Parser failed. Add GEMINI_API_KEY in Supabase → Edge Functions → Secrets, then run: npx supabase functions deploy parse-invoice'
+          : 'Invoice parser is not set up yet. Deploy parse-invoice and add GEMINI_API_KEY in Supabase → Edge Functions → Secrets.'
     } else if (raw.includes('401') || raw.includes('403')) {
       msg = 'Not authorized to run the parser. Sign out and sign in again, then retry.'
     }
