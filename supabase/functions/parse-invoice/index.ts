@@ -128,7 +128,9 @@ function extractJson(text: string): Record<string, unknown> {
   return JSON.parse(raw) as Record<string, unknown>
 }
 
-async function callGemini(base64: string, mimeType: string): Promise<ParsedInvoice> {
+async function callGemini(
+  pages: Array<{ base64: string; mimeType: string }>,
+): Promise<ParsedInvoice> {
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) {
     throw new Error(
@@ -137,12 +139,21 @@ async function callGemini(base64: string, mimeType: string): Promise<ParsedInvoi
   }
 
   const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash'
-  const imageMime =
-    mimeType === 'application/pdf'
-      ? 'application/pdf'
-      : mimeType.startsWith('image/')
-        ? mimeType
-        : 'image/jpeg'
+
+  const mediaParts = pages.map(({ base64, mimeType }) => {
+    const imageMime =
+      mimeType === 'application/pdf'
+        ? 'application/pdf'
+        : mimeType.startsWith('image/')
+          ? mimeType
+          : 'image/jpeg'
+    return { inline_data: { mime_type: imageMime, data: base64 } }
+  })
+
+  const intro =
+    pages.length > 1
+      ? `These ${pages.length} files are consecutive pages of ONE auto repair invoice, in order. Merge line items across all pages; prefer totals and dates from the last page when duplicated.`
+      : 'This is one auto repair invoice.'
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -152,10 +163,7 @@ async function callGemini(base64: string, mimeType: string): Promise<ParsedInvoi
       body: JSON.stringify({
         contents: [
           {
-            parts: [
-              { inline_data: { mime_type: imageMime, data: base64 } },
-              { text: EXTRACT_PROMPT },
-            ],
+            parts: [{ text: intro }, ...mediaParts, { text: EXTRACT_PROMPT }],
           },
         ],
         generationConfig: {
@@ -231,53 +239,58 @@ Deno.serve(async (req) => {
       .from('attachments')
       .select('storage_path, mime_type')
       .eq('service_visit_id', visit_id)
-      .limit(1)
+      .order('uploaded_at', { ascending: true })
 
-    const attachment = attachments?.[0]
-    if (!attachment) return ok({ error: 'No invoice file attached' })
+    if (!attachments?.length) return ok({ error: 'No invoice file attached' })
 
-    const { data: fileData, error: downloadError } = await admin.storage
-      .from('invoices')
-      .download(attachment.storage_path)
+    const maxPages = 10
+    const pageList = attachments.slice(0, maxPages)
+    const pages: Array<{ base64: string; mimeType: string }> = []
 
-    if (downloadError || !fileData) {
-      return ok({ error: `Failed to download invoice: ${downloadError?.message ?? 'unknown'}` })
+    for (const attachment of pageList) {
+      const mimeType = attachment.mime_type || 'image/jpeg'
+      if (
+        mimeType === 'image/heic' ||
+        mimeType === 'image/heif' ||
+        attachment.storage_path.toLowerCase().endsWith('.heic')
+      ) {
+        const parsed = emptyParsed(
+          'HEIC photo not supported on server. Re-upload from Log (we convert on phone) or use Enter manually.',
+        )
+        await admin.from('service_visits').update({
+          raw_parse_json: parsed,
+          parse_status: 'needs_review',
+        }).eq('id', visit_id)
+        return ok({ ok: true, parsed })
+      }
+
+      const { data: fileData, error: downloadError } = await admin.storage
+        .from('invoices')
+        .download(attachment.storage_path)
+
+      if (downloadError || !fileData) {
+        return ok({ error: `Failed to download invoice: ${downloadError?.message ?? 'unknown'}` })
+      }
+
+      const bytes = new Uint8Array(await fileData.arrayBuffer())
+      const maxBytes = 4_500_000
+      if (!mimeType.includes('pdf') && bytes.length > maxBytes) {
+        const parsed = emptyParsed(
+          'A photo is too large to parse. Retake closer to the bill or use Replace photo — we compress on upload.',
+        )
+        await admin.from('service_visits').update({
+          raw_parse_json: parsed,
+          parse_status: 'needs_review',
+        }).eq('id', visit_id)
+        return ok({ ok: true, parsed })
+      }
+
+      pages.push({ base64: toBase64(bytes), mimeType })
     }
-
-    const mimeType = attachment.mime_type || 'image/jpeg'
-    if (
-      mimeType === 'image/heic' ||
-      mimeType === 'image/heif' ||
-      attachment.storage_path.toLowerCase().endsWith('.heic')
-    ) {
-      const parsed = emptyParsed(
-        'HEIC photo not supported on server. Re-upload from Log (we convert on phone) or use Enter manually.',
-      )
-      await admin.from('service_visits').update({
-        raw_parse_json: parsed,
-        parse_status: 'needs_review',
-      }).eq('id', visit_id)
-      return ok({ ok: true, parsed })
-    }
-
-    const bytes = new Uint8Array(await fileData.arrayBuffer())
-    const maxBytes = 4_500_000
-    if (!mimeType.includes('pdf') && bytes.length > maxBytes) {
-      const parsed = emptyParsed(
-        'Photo is too large to parse. Retake closer to the bill or use Replace photo — we compress on upload.',
-      )
-      await admin.from('service_visits').update({
-        raw_parse_json: parsed,
-        parse_status: 'needs_review',
-      }).eq('id', visit_id)
-      return ok({ ok: true, parsed })
-    }
-
-    const base64 = toBase64(bytes)
 
     let parsed: ParsedInvoice
     try {
-      parsed = await callGemini(base64, mimeType)
+      parsed = await callGemini(pages)
     } catch (parseErr) {
       parsed = emptyParsed(parseErr instanceof Error ? parseErr.message : 'Parse failed')
     }

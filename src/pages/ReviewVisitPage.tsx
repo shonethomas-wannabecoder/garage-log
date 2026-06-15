@@ -1,19 +1,21 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Camera, RefreshCw, Trash2 } from 'lucide-react'
+import { Camera, ImagePlus, RefreshCw, Trash2 } from 'lucide-react'
+import { InvoicePagesGallery } from '../components/InvoicePagesGallery'
 import { useAuth } from '../contexts/AuthContext'
 import { useHousehold } from '../contexts/HouseholdContext'
 import {
+  addVisitAttachments,
   confirmVisit,
+  deleteVisitAttachment,
   discardPendingVisit,
-  getAttachmentSignedUrl,
   invokeParseInvoice,
   replaceVisitAttachment,
   useVisitDetail,
 } from '../hooks/useVisits'
 import { InvoiceFileError, prepareInvoiceFile } from '../lib/prepareInvoiceFile'
 import { lineItemsFromParse } from '../lib/parse'
-import type { LineItem, LineItemDraft, LineItemType, ServiceCategory, ServiceVisit } from '../types'
+import type { Attachment, LineItem, LineItemDraft, LineItemType, ServiceCategory, ServiceVisit } from '../types'
 import { CATEGORY_LABELS } from '../types'
 import { PageHeader } from '../components/ui'
 
@@ -79,15 +81,45 @@ export function ReviewVisitPage() {
   const [totalDollars, setTotalDollars] = useState('')
   const [advisorNotes, setAdvisorNotes] = useState('')
   const [lines, setLines] = useState<LineItemDraft[]>([emptyLine()])
-  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [parseMessage, setParseMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [parsing, setParsing] = useState(false)
+  const [removingId, setRemovingId] = useState<string | null>(null)
   const autoParseAttempted = useRef(false)
+  const addInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
 
-  async function handleReplacePhoto(fileList: FileList | null) {
+  async function handleAddPages(fileList: FileList | null) {
+    if (!fileList?.length || !visitId || !household) return
+    setParsing(true)
+    setParseMessage(null)
+    try {
+      const prepared: File[] = []
+      for (const f of Array.from(fileList)) {
+        prepared.push(await prepareInvoiceFile(f))
+      }
+      const added = await addVisitAttachments(visitId, household.id, prepared)
+      if (added.error) {
+        setParseMessage(added.error)
+        setParsing(false)
+        return
+      }
+      await refresh()
+      autoParseAttempted.current = true
+      await retryParse()
+    } catch (err) {
+      setParseMessage(
+        err instanceof InvoiceFileError
+          ? err.message
+          : 'Could not read that photo. Try again or fill in manually.',
+      )
+      setParsing(false)
+    }
+    if (addInputRef.current) addInputRef.current.value = ''
+  }
+
+  async function handleReplaceAll(fileList: FileList | null) {
     if (!fileList?.[0] || !visitId || !household) return
     setParsing(true)
     setParseMessage(null)
@@ -111,6 +143,15 @@ export function ReviewVisitPage() {
       setParsing(false)
     }
     if (replaceInputRef.current) replaceInputRef.current.value = ''
+  }
+
+  async function handleRemovePage(attachment: Attachment) {
+    if (!visitId || !confirm('Remove this page?')) return
+    setRemovingId(attachment.id)
+    const result = await deleteVisitAttachment(attachment.id, attachment.storage_path)
+    await refresh()
+    setRemovingId(null)
+    if (result.error) setParseMessage(result.error)
   }
 
   const retryParse = useCallback(async () => {
@@ -145,12 +186,6 @@ export function ReviewVisitPage() {
     autoParseAttempted.current = true
     void retryParse()
   }, [visit?.parse_status, visitId, parsing, retryParse, visit])
-
-  useEffect(() => {
-    const path = attachments[0]?.storage_path
-    if (!path) return
-    void getAttachmentSignedUrl(path).then(setInvoiceUrl)
-  }, [attachments])
 
   function updateLine(index: number, patch: Partial<LineItemDraft>) {
     setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)))
@@ -211,9 +246,12 @@ export function ReviewVisitPage() {
   const emptyParse = !parsing && !hasParsedContent(visit, lines)
   const needsNewPhoto =
     Boolean(displayError?.toLowerCase().includes('heic')) ||
-    attachments[0]?.mime_type?.includes('heic') ||
-    attachments[0]?.mime_type?.includes('heif') ||
-    attachments[0]?.storage_path?.toLowerCase().endsWith('.heic')
+    attachments.some(
+      (a) =>
+        a.mime_type?.includes('heic') ||
+        a.mime_type?.includes('heif') ||
+        a.storage_path.toLowerCase().endsWith('.heic'),
+    )
 
   return (
     <div className="space-y-5">
@@ -237,24 +275,41 @@ export function ReviewVisitPage() {
             </p>
           )}
           <div className="flex flex-wrap gap-3">
+            <input
+              ref={addInputRef}
+              type="file"
+              accept="image/*,application/pdf"
+              multiple
+              className="hidden"
+              onChange={(e) => void handleAddPages(e.target.files)}
+            />
+            <input
+              ref={replaceInputRef}
+              type="file"
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={(e) => void handleReplaceAll(e.target.files)}
+            />
+            {!needsNewPhoto && (
+              <button
+                type="button"
+                disabled={parsing || attachments.length >= 10}
+                onClick={() => addInputRef.current?.click()}
+                className="inline-flex items-center gap-1.5 font-medium text-brand"
+              >
+                <ImagePlus size={14} aria-hidden />
+                Add page
+              </button>
+            )}
             {needsNewPhoto && (
-              <>
-                <input
-                  ref={replaceInputRef}
-                  type="file"
-                  accept="image/*,application/pdf"
-                  className="hidden"
-                  onChange={(e) => void handleReplacePhoto(e.target.files)}
-                />
-                <button
-                  type="button"
-                  onClick={() => replaceInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 font-medium text-brand"
-                >
-                  <Camera size={14} aria-hidden />
-                  Replace photo
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={() => replaceInputRef.current?.click()}
+                className="inline-flex items-center gap-1.5 font-medium text-brand"
+              >
+                <Camera size={14} aria-hidden />
+                Replace pages
+              </button>
             )}
             {!needsNewPhoto && (
               <button
@@ -282,32 +337,17 @@ export function ReviewVisitPage() {
         </div>
       )}
 
-      {invoiceUrl &&
-        attachments[0]?.mime_type?.startsWith('image/') &&
-        !attachments[0]?.mime_type?.includes('heic') && (
-          <a href={invoiceUrl} target="_blank" rel="noreferrer" className="block">
-            <img
-              src={invoiceUrl}
-              alt="Invoice"
-              className="max-h-48 w-full rounded-2xl border border-line bg-surface object-contain"
-            />
-          </a>
-        )}
+      <InvoicePagesGallery
+        attachments={attachments}
+        onRemove={handleRemovePage}
+        removingId={removingId}
+      />
+
       {needsNewPhoto && (
         <p className="card px-4 py-3 text-sm text-muted">
-          iPhone photo format (HEIC) can&apos;t be read. Tap <strong className="text-content">Replace photo</strong>{' '}
-          to take or pick a new picture — we&apos;ll convert it automatically.
+          iPhone photo format (HEIC) can&apos;t be read. Tap <strong className="text-content">Replace pages</strong>{' '}
+          to take or pick new pictures — we&apos;ll convert them automatically.
         </p>
-      )}
-      {invoiceUrl && attachments[0]?.mime_type === 'application/pdf' && (
-        <a
-          href={invoiceUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="card block px-4 py-3 text-sm font-medium text-brand"
-        >
-          Open invoice PDF →
-        </a>
       )}
 
       <form onSubmit={handleConfirm} className="space-y-4">

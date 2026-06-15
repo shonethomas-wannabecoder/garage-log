@@ -1,20 +1,13 @@
-import { useEffect, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
 import { FileText } from 'lucide-react'
-import { formatDate, formatMileage, formatMoney } from '../lib/format'
-import { getAttachmentSignedUrl, useVisitDetail } from '../hooks/useVisits'
+import { Navigate, useParams } from 'react-router-dom'
+import { InvoicePagesGallery } from '../components/InvoicePagesGallery'
 import { CategoryChip } from '../components/ui'
+import { useVisitDetail } from '../hooks/useVisits'
+import { formatDate, formatMileage, formatMoney } from '../lib/format'
 
 export function VisitPage() {
   const { visitId } = useParams<{ visitId: string }>()
   const { visit, lineItems, attachments, loading, error } = useVisitDetail(visitId)
-  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    const path = attachments[0]?.storage_path
-    if (!path) return
-    void getAttachmentSignedUrl(path).then(setInvoiceUrl)
-  }, [attachments])
 
   if (loading) return <p className="text-muted">Loading…</p>
   if (error || !visit) return <p className="text-danger">{error ?? 'Visit not found'}</p>
@@ -36,25 +29,13 @@ export function VisitPage() {
         )}
       </header>
 
-      {invoiceUrl && attachments[0]?.mime_type?.startsWith('image/') && (
-        <a href={invoiceUrl} target="_blank" rel="noreferrer" className="block">
-          <img
-            src={invoiceUrl}
-            alt="Invoice"
-            className="max-h-44 w-full rounded-2xl border border-line bg-surface object-contain"
-          />
-        </a>
-      )}
-      {invoiceUrl && attachments[0]?.mime_type === 'application/pdf' && (
-        <a
-          href={invoiceUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="card flex items-center gap-2 px-4 py-3 text-sm font-medium text-brand"
-        >
+      <InvoicePagesGallery attachments={attachments} />
+
+      {attachments.some((a) => a.mime_type === 'application/pdf') && (
+        <p className="flex items-center gap-2 text-sm text-muted">
           <FileText size={16} aria-hidden />
-          Open invoice PDF
-        </a>
+          Tap a PDF page above to open it.
+        </p>
       )}
 
       {visit.advisor_notes && (

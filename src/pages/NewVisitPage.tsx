@@ -5,7 +5,7 @@ import { VehicleSelect } from '../components/VehicleSelect'
 import { useAuth } from '../contexts/AuthContext'
 import { useHousehold } from '../contexts/HouseholdContext'
 import {
-  createPendingVisitWithFile,
+  createPendingVisitWithFiles,
   createVisitWithLines,
   invokeParseInvoice,
 } from '../hooks/useVisits'
@@ -37,26 +37,34 @@ export function NewVisitPage() {
   const [totalDollars, setTotalDollars] = useState('')
   const [advisorNotes, setAdvisorNotes] = useState('')
   const [lines, setLines] = useState<LineItemDraft[]>([emptyLine()])
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
 
-  function onFilePicked(next: File | null) {
-    setFile(next)
+  function addFiles(incoming: FileList | File[] | null) {
+    if (!incoming?.length) return
+    const next = Array.from(incoming)
+    setFiles((prev) => [...prev, ...next].slice(0, 10))
     setError(null)
   }
 
-  async function uploadAndParse(uploadFile: File) {
-    if (!selectedVehicleId || !household) return
+  function removeFile(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  async function uploadAndParse(uploadFiles: File[]) {
+    if (!selectedVehicleId || !household || !uploadFiles.length) return
 
     setSaving(true)
     setError(null)
 
-    let prepared: File
+    const prepared: File[] = []
     try {
-      prepared = await prepareInvoiceFile(uploadFile)
+      for (const f of uploadFiles) {
+        prepared.push(await prepareInvoiceFile(f))
+      }
     } catch (err) {
       setSaving(false)
       setError(
@@ -67,7 +75,7 @@ export function NewVisitPage() {
       return
     }
 
-    const created = await createPendingVisitWithFile(selectedVehicleId, prepared, household.id)
+    const created = await createPendingVisitWithFiles(selectedVehicleId, prepared, household.id)
     if (created.error || !created.visitId) {
       setSaving(false)
       setError(created.error ?? 'Failed to upload')
@@ -88,11 +96,11 @@ export function NewVisitPage() {
 
   async function handleScanSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!file) {
-      setError('Take a photo or choose an image first.')
+    if (!files.length) {
+      setError('Add at least one page of the invoice.')
       return
     }
-    await uploadAndParse(file)
+    await uploadAndParse(files)
   }
 
   function updateLine(index: number, patch: Partial<LineItemDraft>) {
@@ -115,6 +123,24 @@ export function NewVisitPage() {
     setSaving(true)
     setError(null)
 
+    let preparedFiles = files
+    if (files.length) {
+      try {
+        preparedFiles = []
+        for (const f of files) {
+          preparedFiles.push(await prepareInvoiceFile(f))
+        }
+      } catch (err) {
+        setSaving(false)
+        setError(
+          err instanceof InvoiceFileError
+            ? err.message
+            : 'Could not read one of the invoice photos.',
+        )
+        return
+      }
+    }
+
     const total_cents = totalDollars
       ? Math.round(parseFloat(totalDollars) * 100)
       : validLines.reduce((sum, l) => sum + (l.line_total_cents ?? 0), 0) || null
@@ -130,7 +156,7 @@ export function NewVisitPage() {
         advisor_notes: advisorNotes.trim() || null,
       },
       validLines,
-      file,
+      preparedFiles,
       household.id,
       user.id,
     )
@@ -185,9 +211,7 @@ export function NewVisitPage() {
             capture="environment"
             className="hidden"
             onChange={(e) => {
-              const picked = e.target.files?.[0] ?? null
-              onFilePicked(picked)
-              if (picked) void uploadAndParse(picked)
+              addFiles(e.target.files)
               e.target.value = ''
             }}
           />
@@ -195,43 +219,63 @@ export function NewVisitPage() {
             ref={libraryInputRef}
             type="file"
             accept="image/*,application/pdf"
+            multiple
             className="hidden"
-            onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              addFiles(e.target.files)
+              e.target.value = ''
+            }}
           />
 
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || files.length >= 10}
               onClick={() => cameraInputRef.current?.click()}
               className="btn-primary flex items-center justify-center gap-2 py-3 text-sm"
             >
               <Camera size={18} aria-hidden />
-              Take photo
+              {files.length ? 'Add page' : 'Take photo'}
             </button>
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || files.length >= 10}
               onClick={() => libraryInputRef.current?.click()}
               className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-sm font-medium text-content"
             >
               <ImagePlus size={18} aria-hidden />
-              Choose file
+              Choose files
             </button>
           </div>
 
-          {file && (
-            <p className="text-sm text-muted">
-              Selected: <span className="text-content">{file.name}</span>
-            </p>
+          {files.length > 0 && (
+            <ul className="space-y-1.5">
+              {files.map((f, index) => (
+                <li
+                  key={`${f.name}-${index}`}
+                  className="card flex items-center justify-between gap-2 px-3 py-2 text-sm"
+                >
+                  <span className="truncate text-content">
+                    Page {index + 1}: {f.name}
+                  </span>
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs font-medium text-danger"
+                    onClick={() => removeFile(index)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
 
           <p className="text-xs text-faint">
-            <strong className="text-muted">Tip:</strong> Use Take photo for iPhone bills — library photos are often HEIC and harder to read.
+            <strong className="text-muted">Tip:</strong> Add every page of a multi-page bill (up to 10). Use Take photo for iPhone — library photos are often HEIC.
           </p>
           {error && <p className="text-sm text-danger">{error}</p>}
-          <button type="submit" disabled={saving || !file} className="btn-primary w-full disabled:opacity-50">
-            {saving ? 'Reading invoice…' : 'Upload & parse'}
+          <button type="submit" disabled={saving || !files.length} className="btn-primary w-full disabled:opacity-50">
+            {saving ? 'Reading invoice…' : `Upload & parse${files.length > 1 ? ` (${files.length} pages)` : ''}`}
           </button>
         </form>
       ) : (
@@ -294,14 +338,19 @@ export function NewVisitPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm text-muted">Invoice photo or PDF (optional)</span>
+            <span className="text-sm text-muted">Invoice pages (optional)</span>
             <input
               type="file"
               accept="image/*,application/pdf"
+              multiple
               className="mt-1 w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-2 file:text-sm file:font-medium file:text-content"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => addFiles(e.target.files)}
             />
           </label>
+
+          {files.length > 0 && (
+            <p className="text-sm text-muted">{files.length} page{files.length > 1 ? 's' : ''} selected</p>
+          )}
 
           <fieldset className="space-y-3">
             <legend className="font-semibold">Line items</legend>

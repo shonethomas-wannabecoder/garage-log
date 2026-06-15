@@ -154,7 +154,7 @@ export function useVisitDetail(visitId: string | undefined) {
     const [visitRes, itemsRes, attachRes] = await Promise.all([
       supabase.from('service_visits').select('*').eq('id', visitId).single(),
       supabase.from('line_items').select('*').eq('service_visit_id', visitId).order('sort_order'),
-      supabase.from('attachments').select('*').eq('service_visit_id', visitId),
+      supabase.from('attachments').select('*').eq('service_visit_id', visitId).order('uploaded_at'),
     ])
 
     if (visitRes.error) setError(visitRes.error.message)
@@ -177,11 +177,45 @@ export async function getAttachmentSignedUrl(storagePath: string): Promise<strin
   return data?.signedUrl ?? null
 }
 
+async function uploadFilesToVisit(
+  visitId: string,
+  householdId: string,
+  files: File[],
+): Promise<{ error: string | null }> {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const path = `${householdId}/${visitId}/${Date.now()}-${i}-${file.name}`
+    const { error: uploadError } = await supabase.storage.from('invoices').upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    })
+    if (uploadError) return { error: uploadError.message }
+
+    const { error: attachError } = await supabase.from('attachments').insert({
+      service_visit_id: visitId,
+      storage_path: path,
+      mime_type: file.type,
+    })
+    if (attachError) return { error: attachError.message }
+  }
+  return { error: null }
+}
+
 export async function createPendingVisitWithFile(
   vehicleId: string,
   file: File,
   householdId: string,
 ): Promise<{ visitId: string | null; error: string | null }> {
+  return createPendingVisitWithFiles(vehicleId, [file], householdId)
+}
+
+export async function createPendingVisitWithFiles(
+  vehicleId: string,
+  files: File[],
+  householdId: string,
+): Promise<{ visitId: string | null; error: string | null }> {
+  if (!files.length) return { visitId: null, error: 'No files to upload' }
+
   const { data: visitRow, error: visitError } = await supabase
     .from('service_visits')
     .insert({
@@ -197,21 +231,40 @@ export async function createPendingVisitWithFile(
   }
 
   const visitId = visitRow.id as string
-  const path = `${householdId}/${visitId}/${Date.now()}-${file.name}`
-  const { error: uploadError } = await supabase.storage.from('invoices').upload(path, file, {
-    contentType: file.type,
-    upsert: false,
-  })
-  if (uploadError) return { visitId, error: uploadError.message }
-
-  const { error: attachError } = await supabase.from('attachments').insert({
-    service_visit_id: visitId,
-    storage_path: path,
-    mime_type: file.type,
-  })
-  if (attachError) return { visitId, error: attachError.message }
+  const uploaded = await uploadFilesToVisit(visitId, householdId, files)
+  if (uploaded.error) return { visitId, error: uploaded.error }
 
   return { visitId, error: null }
+}
+
+export async function addVisitAttachments(
+  visitId: string,
+  householdId: string,
+  files: File[],
+  resetParse = true,
+): Promise<{ error: string | null }> {
+  if (!files.length) return { error: null }
+
+  const uploaded = await uploadFilesToVisit(visitId, householdId, files)
+  if (uploaded.error) return uploaded
+
+  if (resetParse) {
+    await supabase
+      .from('service_visits')
+      .update({ parse_status: 'pending', raw_parse_json: null })
+      .eq('id', visitId)
+  }
+
+  return { error: null }
+}
+
+export async function deleteVisitAttachment(
+  attachmentId: string,
+  storagePath: string,
+): Promise<{ error: string | null }> {
+  await supabase.storage.from('invoices').remove([storagePath])
+  const { error } = await supabase.from('attachments').delete().eq('id', attachmentId)
+  return { error: error?.message ?? null }
 }
 
 export async function replaceVisitAttachment(
@@ -396,7 +449,7 @@ export async function createVisitWithLines(
     advisor_notes: string | null
   },
   lines: LineItemDraft[],
-  file: File | null,
+  files: File[],
   householdId: string,
   userId: string,
 ): Promise<{ visitId: string | null; error: string | null }> {
@@ -434,20 +487,9 @@ export async function createVisitWithLines(
     if (linesError) return { visitId, error: linesError.message }
   }
 
-  if (file) {
-    const path = `${householdId}/${visitId}/${Date.now()}-${file.name}`
-    const { error: uploadError } = await supabase.storage.from('invoices').upload(path, file, {
-      contentType: file.type,
-      upsert: false,
-    })
-    if (uploadError) return { visitId, error: uploadError.message }
-
-    const { error: attachError } = await supabase.from('attachments').insert({
-      service_visit_id: visitId,
-      storage_path: path,
-      mime_type: file.type,
-    })
-    if (attachError) return { visitId, error: attachError.message }
+  if (files.length) {
+    const uploaded = await uploadFilesToVisit(visitId, householdId, files)
+    if (uploaded.error) return { visitId, error: uploaded.error }
   }
 
   return { visitId, error: null }
