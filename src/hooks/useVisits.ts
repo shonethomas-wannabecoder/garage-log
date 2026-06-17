@@ -267,6 +267,17 @@ export async function deleteVisitAttachment(
   return { error: error?.message ?? null }
 }
 
+export async function moveVisitToVehicle(
+  visitId: string,
+  vehicleId: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('service_visits')
+    .update({ vehicle_id: vehicleId })
+    .eq('id', visitId)
+  return { error: error?.message ?? null }
+}
+
 export async function replaceVisitAttachment(
   visitId: string,
   householdId: string,

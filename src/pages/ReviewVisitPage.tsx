@@ -2,6 +2,7 @@ import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Camera, ImagePlus, RefreshCw, Trash2 } from 'lucide-react'
 import { InvoicePagesGallery } from '../components/InvoicePagesGallery'
+import { VisitVehiclePicker, vehicleLabel } from '../components/VisitVehiclePicker'
 import { useAuth } from '../contexts/AuthContext'
 import { useHousehold } from '../contexts/HouseholdContext'
 import {
@@ -10,6 +11,7 @@ import {
   deleteVisitAttachment,
   discardPendingVisit,
   invokeParseInvoice,
+  moveVisitToVehicle,
   replaceVisitAttachment,
   useVisitDetail,
 } from '../hooks/useVisits'
@@ -71,7 +73,7 @@ export function ReviewVisitPage() {
   const { visitId } = useParams<{ visitId: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { household } = useHousehold()
+  const { household, vehicles } = useHousehold()
   const { visit, lineItems, attachments, loading, error, refresh } = useVisitDetail(visitId)
 
   const [serviceDate, setServiceDate] = useState('')
@@ -86,6 +88,7 @@ export function ReviewVisitPage() {
   const [saving, setSaving] = useState(false)
   const [parsing, setParsing] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [movingVehicle, setMovingVehicle] = useState(false)
   const autoParseAttempted = useRef(false)
   const addInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
@@ -151,6 +154,25 @@ export function ReviewVisitPage() {
     const result = await deleteVisitAttachment(attachment.id, attachment.storage_path)
     await refresh()
     setRemovingId(null)
+    if (result.error) setParseMessage(result.error)
+  }
+
+  async function handleVehicleChange(nextId: string) {
+    if (!visitId || !visit || nextId === visit.vehicle_id) return
+    const nextVehicle = vehicles.find((v) => v.id === nextId)
+    if (
+      !confirm(
+        `Move this visit to ${nextVehicle ? vehicleLabel(nextVehicle) : 'the selected vehicle'}?`,
+      )
+    ) {
+      return
+    }
+
+    setMovingVehicle(true)
+    setParseMessage(null)
+    const result = await moveVisitToVehicle(visitId, nextId)
+    await refresh()
+    setMovingVehicle(false)
     if (result.error) setParseMessage(result.error)
   }
 
@@ -351,6 +373,12 @@ export function ReviewVisitPage() {
       )}
 
       <form onSubmit={handleConfirm} className="space-y-4">
+        <VisitVehiclePicker
+          vehicleId={visit.vehicle_id}
+          onVehicleChange={handleVehicleChange}
+          disabled={movingVehicle || parsing || saving}
+        />
+
         <label className="block">
           <span className="text-sm text-muted">Service date</span>
           <input

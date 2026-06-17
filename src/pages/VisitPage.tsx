@@ -2,9 +2,10 @@ import { useRef, useState } from 'react'
 import { Camera, FileText, ImagePlus } from 'lucide-react'
 import { Navigate, useParams } from 'react-router-dom'
 import { InvoicePagesGallery } from '../components/InvoicePagesGallery'
+import { VisitVehiclePicker, vehicleLabel } from '../components/VisitVehiclePicker'
 import { CategoryChip } from '../components/ui'
 import { useHousehold } from '../contexts/HouseholdContext'
-import { addVisitAttachments, deleteVisitAttachment, useVisitDetail } from '../hooks/useVisits'
+import { addVisitAttachments, deleteVisitAttachment, moveVisitToVehicle, useVisitDetail } from '../hooks/useVisits'
 import { InvoiceFileError, prepareInvoiceFile } from '../lib/prepareInvoiceFile'
 import { formatDate, formatMileage, formatMoney } from '../lib/format'
 import type { Attachment } from '../types'
@@ -13,11 +14,12 @@ const MAX_PAGES = 10
 
 export function VisitPage() {
   const { visitId } = useParams<{ visitId: string }>()
-  const { household } = useHousehold()
+  const { household, vehicles } = useHousehold()
   const { visit, lineItems, attachments, loading, error, refresh } = useVisitDetail(visitId)
 
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [movingVehicle, setMovingVehicle] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
@@ -69,6 +71,25 @@ export function VisitPage() {
     if (result.error) setUploadError(result.error)
   }
 
+  async function handleVehicleChange(nextId: string) {
+    if (!visitId || !visit || nextId === visit.vehicle_id) return
+    const nextVehicle = vehicles.find((v) => v.id === nextId)
+    if (
+      !confirm(
+        `Move this visit to ${nextVehicle ? vehicleLabel(nextVehicle) : 'the selected vehicle'}?`,
+      )
+    ) {
+      return
+    }
+
+    setMovingVehicle(true)
+    setUploadError(null)
+    const result = await moveVisitToVehicle(visitId, nextId)
+    await refresh()
+    setMovingVehicle(false)
+    if (result.error) setUploadError(result.error)
+  }
+
   if (loading) return <p className="text-muted">Loading…</p>
   if (error || !visit) return <p className="text-danger">{error ?? 'Visit not found'}</p>
 
@@ -90,6 +111,12 @@ export function VisitPage() {
           <p className="text-sm text-faint">Invoice #{visit.invoice_number}</p>
         )}
       </header>
+
+      <VisitVehiclePicker
+        vehicleId={visit.vehicle_id}
+        onVehicleChange={handleVehicleChange}
+        disabled={movingVehicle || uploading}
+      />
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-2">
