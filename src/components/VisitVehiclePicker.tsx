@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { BrandAvatar } from './BrandAvatar'
@@ -18,34 +19,71 @@ export function VisitVehiclePicker({
   disabled?: boolean
 }) {
   const { vehicles, loading } = useHousehold()
-
-  if (loading || vehicles.length < 2) return null
-
   const selected = vehicles.find((v) => v.id === vehicleId)
+  const canMove = vehicles.length >= 2
+
+  if (loading) {
+    return (
+      <section className="card space-y-2 p-4">
+        <h2 className="text-base font-semibold">Vehicle</h2>
+        <p className="text-sm text-muted">Loading vehicles…</p>
+      </section>
+    )
+  }
+
+  if (!vehicles.length) return null
 
   return (
-    <label className="block">
-      <span className="text-sm text-muted">Vehicle</span>
-      <div className="card relative mt-1 flex items-center gap-3 px-4 py-3">
-        <BrandAvatar make={selected?.make} size={38} />
-        <select
-          className="peer w-full appearance-none bg-transparent pr-6 text-base font-medium text-content focus:outline-none disabled:opacity-50"
-          value={vehicleId}
-          disabled={disabled}
-          onChange={(e) => void onVehicleChange(e.target.value)}
-          aria-label="Select vehicle for this visit"
-        >
-          {vehicles.map((v) => (
-            <option key={v.id} value={v.id} className="bg-surface text-content">
-              {vehicleLabel(v)}
-            </option>
-          ))}
-        </select>
-        <ChevronDown size={18} className="pointer-events-none absolute right-4 text-faint" aria-hidden />
+    <section className="card space-y-3 p-4">
+      <div>
+        <h2 className="text-base font-semibold">Vehicle</h2>
+        <p className="mt-0.5 text-sm text-muted">
+          {canMove
+            ? 'Wrong car? Choose the correct vehicle below.'
+            : 'This visit is saved under this vehicle.'}
+        </p>
       </div>
-      <p className="mt-1.5 text-xs text-faint">
-        Wrong car? Pick the correct vehicle — invoice and line items move with it.
-      </p>
-    </label>
+
+      {canMove ? (
+        <label className="block">
+          <div className="relative flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
+            <BrandAvatar make={selected?.make} size={38} />
+            <select
+              className="peer w-full appearance-none bg-transparent pr-6 text-base font-medium text-content focus:outline-none disabled:opacity-50"
+              value={vehicleId}
+              disabled={disabled}
+              onChange={(e) => void onVehicleChange(e.target.value)}
+              aria-label="Select vehicle for this visit"
+            >
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id} className="bg-surface text-content">
+                  {vehicleLabel(v)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={18} className="pointer-events-none absolute right-4 text-faint" aria-hidden />
+          </div>
+          <p className="mt-1.5 text-xs text-faint">
+            Invoice photos and line items move with the visit.
+          </p>
+        </label>
+      ) : (
+        <>
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
+            <BrandAvatar make={selected?.make} size={38} />
+            <span className="text-base font-medium text-content">
+              {selected ? vehicleLabel(selected) : 'Unknown vehicle'}
+            </span>
+          </div>
+          <p className="text-xs text-faint">
+            Logged to the wrong car?{' '}
+            <Link to="/vehicles" className="font-medium text-brand">
+              Add your other vehicle under Cars
+            </Link>
+            , then return here to move this visit.
+          </p>
+        </>
+      )}
+    </section>
   )
 }
