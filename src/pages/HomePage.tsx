@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { AlertCircle, ClipboardCheck, Search } from 'lucide-react'
+import { NextFactoryServiceCard } from '../components/NextFactoryServiceCard'
 import { LastServiceCard } from '../components/LastServiceCard'
 import { VehicleSelect } from '../components/VehicleSelect'
 import { PageHeader } from '../components/ui'
 import { useHousehold } from '../contexts/HouseholdContext'
+import { useNextFactoryService } from '../hooks/useNextFactoryService'
 import { usePendingVisits, useVisitDetail, useVisits } from '../hooks/useVisits'
 import { formatDate, formatMoney } from '../lib/format'
 
@@ -11,6 +13,8 @@ export function HomePage() {
   const { household, selectedVehicleId, vehicles } = useHousehold()
   const { visits, loading: visitsLoading } = useVisits(selectedVehicleId)
   const { visits: pendingVisits } = usePendingVisits(selectedVehicleId)
+  const { recommendation: nextFactoryService, loading: factoryLoading } =
+    useNextFactoryService(selectedVehicleId)
   const lastVisit = visits[0] ?? null
   const { lineItems, loading: detailLoading } = useVisitDetail(lastVisit?.id)
 
@@ -62,6 +66,17 @@ export function HomePage() {
               At the shop? Check today's recommendations against your real history.
             </p>
           </Link>
+
+          {(factoryLoading || visitsLoading || nextFactoryService) && (
+            <section>
+              <h2 className="mb-2 text-base font-semibold">Up next</h2>
+              <NextFactoryServiceCard
+                recommendation={nextFactoryService}
+                loading={factoryLoading || visitsLoading}
+                hasVisits={visits.length > 0}
+              />
+            </section>
+          )}
 
           <section>
             <h2 className="mb-2 text-base font-semibold">Last service</h2>
