@@ -1,13 +1,17 @@
 import { useMemo } from 'react'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { computeNextFactoryService } from '../lib/nextFactoryService'
-import { useVisits } from './useVisits'
+import type { ServiceVisit } from '../types'
 
-export function useNextFactoryService(vehicleId: string | null) {
+// Derives the next factory-service recommendation from visits the caller already
+// has, to avoid issuing a second identical query for the same vehicle.
+export function useNextFactoryService(vehicleId: string | null, visits: ServiceVisit[]) {
   const { vehicles } = useHousehold()
-  const { visits, loading } = useVisits(vehicleId)
 
-  const vehicle = vehicles.find((v) => v.id === vehicleId) ?? null
+  const vehicle = useMemo(
+    () => vehicles.find((v) => v.id === vehicleId) ?? null,
+    [vehicles, vehicleId],
+  )
 
   const currentMiles = useMemo(() => {
     const readings = visits.map((v) => v.odometer).filter((o): o is number => o != null)
@@ -20,5 +24,5 @@ export function useNextFactoryService(vehicleId: string | null) {
     return computeNextFactoryService(vehicle, currentMiles)
   }, [vehicle, currentMiles])
 
-  return { recommendation, currentMiles, vehicle, loading }
+  return { recommendation, currentMiles, vehicle }
 }

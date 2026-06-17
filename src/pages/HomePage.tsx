@@ -13,8 +13,7 @@ export function HomePage() {
   const { household, selectedVehicleId, vehicles } = useHousehold()
   const { visits, loading: visitsLoading } = useVisits(selectedVehicleId)
   const { visits: pendingVisits } = usePendingVisits(selectedVehicleId)
-  const { recommendation: nextFactoryService, loading: factoryLoading } =
-    useNextFactoryService(selectedVehicleId)
+  const { recommendation: nextFactoryService } = useNextFactoryService(selectedVehicleId, visits)
   const lastVisit = visits[0] ?? null
   const { lineItems, loading: detailLoading } = useVisitDetail(lastVisit?.id)
 
@@ -67,12 +66,12 @@ export function HomePage() {
             </p>
           </Link>
 
-          {(factoryLoading || visitsLoading || nextFactoryService) && (
+          {(visitsLoading || nextFactoryService) && (
             <section>
               <h2 className="mb-2 text-base font-semibold">Up next</h2>
               <NextFactoryServiceCard
                 recommendation={nextFactoryService}
-                loading={factoryLoading || visitsLoading}
+                loading={visitsLoading}
                 hasVisits={visits.length > 0}
               />
             </section>
