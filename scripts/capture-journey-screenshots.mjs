@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, unlink } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
@@ -12,13 +12,21 @@ const port = 4321
 const baseUrl = `http://127.0.0.1:${port}`
 
 const shots = [
-  { file: 'journey-1-log-bill.png', path: '/__journey__/visits/new' },
+  { file: 'journey-1-add-vehicles.png', path: '/__journey__/vehicles' },
+  { file: 'journey-2-log-bill.png', path: '/__journey__/visits/new' },
   {
-    file: 'journey-2-review-invoice.png',
+    file: 'journey-3-review-invoice.png',
     path: '/__journey__/visits/00000000-0000-4000-8000-000000000004/review',
   },
-  { file: 'journey-3-home-history.png', path: '/__journey__/' },
-  { file: 'journey-4-compare-quote.png', path: '/__journey__/compare' },
+  { file: 'journey-4-home-history.png', path: '/__journey__/' },
+  { file: 'journey-5-compare-quote.png', path: '/__journey__/compare' },
+]
+
+const legacyFiles = [
+  'journey-1-log-bill.png',
+  'journey-2-review-invoice.png',
+  'journey-3-home-history.png',
+  'journey-4-compare-quote.png',
 ]
 
 function waitForServer(url, timeoutMs = 60_000) {
@@ -50,6 +58,14 @@ const preview = spawn('npm', ['run', 'preview', '--', '--host', '127.0.0.1', '--
 try {
   await waitForServer(baseUrl)
   await mkdir(outDir, { recursive: true })
+
+  for (const legacy of legacyFiles) {
+    try {
+      await unlink(path.join(outDir, legacy))
+    } catch {
+      // already removed
+    }
+  }
 
   const browser = await chromium.launch()
   const page = await browser.newPage({

@@ -7,6 +7,7 @@ import {
   demoHousehold,
   demoMembers,
   demoVehicle,
+  demoVehicle2,
   DEMO_USER_ID,
   DEMO_VEHICLE_ID,
 } from './fixtures'
@@ -17,6 +18,7 @@ function journeyScreenFromPath(pathname: string): JourneyScreen {
   if (pathname.includes('/visits/new')) return 'log'
   if (pathname.includes('/review')) return 'review'
   if (pathname.includes('/compare')) return 'compare'
+  if (pathname.includes('/vehicles')) return 'vehicles'
   return 'home'
 }
 
@@ -30,7 +32,7 @@ export function JourneyDemoLayout() {
         demoSnapshot={{
           household: demoHousehold,
           members: demoMembers,
-          vehicles: [demoVehicle],
+          vehicles: [demoVehicle, demoVehicle2],
           selectedVehicleId: DEMO_VEHICLE_ID,
           setSelectedVehicleId: () => {},
           loading: false,

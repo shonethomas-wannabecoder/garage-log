@@ -1,30 +1,37 @@
 const JOURNEY_STEPS = [
   {
     step: 1,
-    title: 'Log',
-    caption: 'Photograph the invoice right after service.',
-    image: '/journey/journey-1-log-bill.png',
-    alt: 'Garage Log log service screen with take photo and choose files',
+    title: 'Cars',
+    caption: 'Add every vehicle in your household — one garage, multiple cars.',
+    image: '/journey/journey-1-add-vehicles.png',
+    alt: 'Garage Log Cars screen with two vehicles listed and add vehicle form',
   },
   {
     step: 2,
-    title: 'Review',
-    caption: 'Confirm what was read before you save.',
-    image: '/journey/journey-2-review-invoice.png',
-    alt: 'Garage Log review invoice screen with shop mileage and line items',
+    title: 'Log',
+    caption: 'Photograph the invoice right after service.',
+    image: '/journey/journey-2-log-bill.png',
+    alt: 'Garage Log log service screen with take photo and choose files',
   },
   {
     step: 3,
-    title: 'History',
-    caption: 'Every visit stays on your timeline.',
-    image: '/journey/journey-3-home-history.png',
-    alt: 'Garage Log home screen with last service and upcoming maintenance',
+    title: 'Review',
+    caption: 'Confirm what was read before you save.',
+    image: '/journey/journey-3-review-invoice.png',
+    alt: 'Garage Log review invoice screen with shop mileage and line items',
   },
   {
     step: 4,
+    title: 'History',
+    caption: 'Every visit stays on your timeline.',
+    image: '/journey/journey-4-home-history.png',
+    alt: 'Garage Log home screen with last service and upcoming maintenance',
+  },
+  {
+    step: 5,
     title: 'Compare',
     caption: 'Check shop quotes against what you already had done.',
-    image: '/journey/journey-4-compare-quote.png',
+    image: '/journey/journey-5-compare-quote.png',
     alt: 'Garage Log compare a quote screen with done recently badges',
   },
 ] as const
@@ -41,7 +48,7 @@ export function LoginJourneyPreview() {
           How Garage Log works
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Four quick steps from invoice to accountability.
+          Five quick steps from your cars to accountability.
         </p>
       </div>
 
@@ -84,7 +91,7 @@ export function LoginJourneyPreview() {
             </figure>
           ))}
         </div>
-        <p className="text-center text-[11px] text-faint">Swipe to see all four steps</p>
+        <p className="text-center text-[11px] text-faint">Swipe to see all five steps</p>
       </div>
     </section>
   )

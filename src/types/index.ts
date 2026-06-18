@@ -1,4 +1,5 @@
 export type MemberRole = 'owner' | 'member'
+export type WaitlistStatus = 'pending' | 'approved' | 'rejected'
 export type ParseStatus = 'pending' | 'needs_review' | 'confirmed'
 export type LineItemType = 'part' | 'labor' | 'fee' | 'tax' | 'other'
 export type ServiceCategory =

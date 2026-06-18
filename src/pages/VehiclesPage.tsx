@@ -1,15 +1,19 @@
 import { type FormEvent, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
+import { demoAddVehicleDraft } from '../demo/fixtures'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { PageHeader } from '../components/ui'
 import { BrandAvatar } from '../components/BrandAvatar'
 
 export function VehiclesPage() {
+  const { pathname } = useLocation()
+  const draft = pathname === '/__journey__/vehicles' ? demoAddVehicleDraft : null
   const { vehicles, addVehicle, deleteVehicle } = useHousehold()
-  const [nickname, setNickname] = useState('')
-  const [year, setYear] = useState('')
-  const [make, setMake] = useState('')
-  const [model, setModel] = useState('')
+  const [nickname, setNickname] = useState(draft?.nickname ?? '')
+  const [year, setYear] = useState(draft?.year ?? '')
+  const [make, setMake] = useState(draft?.make ?? '')
+  const [model, setModel] = useState(draft?.model ?? '')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 

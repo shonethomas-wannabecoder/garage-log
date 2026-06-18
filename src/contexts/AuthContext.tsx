@@ -9,6 +9,7 @@ import {
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { assertWaitlistApproved, isWaitlistEnabled } from '../lib/waitlist'
 
 interface AuthContextValue {
   session: Session | null
@@ -58,7 +59,21 @@ export function AuthProvider({
     return () => subscription.unsubscribe()
   }, [demoUser])
 
+  useEffect(() => {
+    if (demoUser !== undefined || !isWaitlistEnabled()) return
+    const email = session?.user?.email
+    if (!email) return
+
+    void (async () => {
+      const blocked = await assertWaitlistApproved(email)
+      if (blocked) await supabase.auth.signOut()
+    })()
+  }, [demoUser, session?.user?.email])
+
   const sendEmailLogin = useCallback(async (email: string) => {
+    const waitlistError = await assertWaitlistApproved(email)
+    if (waitlistError) return { error: waitlistError }
+
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
@@ -70,6 +85,9 @@ export function AuthProvider({
   }, [])
 
   const verifyEmailCode = useCallback(async (email: string, code: string) => {
+    const waitlistError = await assertWaitlistApproved(email)
+    if (waitlistError) return { error: waitlistError }
+
     const { error } = await supabase.auth.verifyOtp({
       email: email.trim(),
       token: code.trim(),
@@ -79,16 +97,25 @@ export function AuthProvider({
   }, [])
 
   const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const waitlistError = await assertWaitlistApproved(email)
+    if (waitlistError) return { error: waitlistError }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error?.message ?? null }
   }, [])
 
   const signUpWithPassword = useCallback(async (email: string, password: string) => {
+    const waitlistError = await assertWaitlistApproved(email)
+    if (waitlistError) return { error: waitlistError }
+
     const { error } = await supabase.auth.signUp({ email, password })
     return { error: error?.message ?? null }
   }, [])
 
   const requestPasswordReset = useCallback(async (email: string) => {
+    const waitlistError = await assertWaitlistApproved(email)
+    if (waitlistError) return { error: waitlistError }
+
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/reset-password`,
     })

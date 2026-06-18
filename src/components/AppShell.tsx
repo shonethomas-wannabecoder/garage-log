@@ -1,15 +1,17 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Home, Camera, Search, Car, Users, type LucideIcon } from 'lucide-react'
 
-const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
-  { to: '/', label: 'Home', icon: Home, end: true },
-  { to: '/visits/new', label: 'Log', icon: Camera },
-  { to: '/search', label: 'Search', icon: Search },
-  { to: '/vehicles', label: 'Cars', icon: Car },
-  { to: '/household', label: 'Family', icon: Users },
-]
-
 export function AppShell() {
+  const { pathname } = useLocation()
+  const base = pathname.startsWith('/__journey__') ? '/__journey__' : ''
+
+  const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
+    { to: `${base}/`, label: 'Home', icon: Home, end: true },
+    { to: `${base}/visits/new`, label: 'Log', icon: Camera },
+    { to: `${base}/search`, label: 'Search', icon: Search },
+    { to: `${base}/vehicles`, label: 'Cars', icon: Car },
+    { to: `${base}/household`, label: 'Family', icon: Users },
+  ]
   return (
     <div className="flex min-h-full flex-col">
       <main id="app-main" className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">

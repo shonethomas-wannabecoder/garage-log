@@ -60,6 +60,7 @@ export default function App() {
               <Route path="compare" element={<ComparePage />} />
               <Route path="visits/new" element={<NewVisitPage />} />
               <Route path="visits/:visitId/review" element={<ReviewVisitPage />} />
+              <Route path="vehicles" element={<VehiclesPage />} />
             </Route>
           </Route>
           <Route path="/*" element={<ProtectedRoutes />} />

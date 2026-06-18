@@ -2,9 +2,13 @@ import { type FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Car, Mail } from 'lucide-react'
 import { LoginJourneyPreview } from '../components/LoginJourneyPreview'
+import { WaitlistJoinForm, WaitlistJoinedMessage } from '../components/WaitlistPanel'
 import { useAuth } from '../contexts/AuthContext'
+import { isWaitlistEnabled, joinWaitlist } from '../lib/waitlist'
+import type { WaitlistStatus } from '../types'
 
 type Step = 'email' | 'check-email' | 'code' | 'password' | 'forgot-password' | 'forgot-password-sent'
+type Gate = 'join' | 'joined' | 'login'
 
 export function LoginPage() {
   const {
@@ -22,9 +26,32 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const waitlistOn = isWaitlistEnabled()
+  const [gate, setGate] = useState<Gate>(waitlistOn ? 'join' : 'login')
+  const [waitlistStatus, setWaitlistStatus] = useState<WaitlistStatus | null>(null)
 
   if (!configured) return <Navigate to="/setup" replace />
   if (!loading && user) return <Navigate to="/" replace />
+
+  async function handleJoinWaitlist(e: FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    const result = await joinWaitlist(email)
+    setSubmitting(false)
+    if (!result.ok) {
+      setError(result.error ?? 'Could not join waitlist')
+      return
+    }
+    setWaitlistStatus(result.status ?? 'pending')
+    if (result.status === 'approved') {
+      setGate('login')
+      setStep('email')
+      setError(null)
+      return
+    }
+    setGate('joined')
+  }
 
   async function handleSendLogin(e: FormEvent) {
     e.preventDefault()
@@ -96,8 +123,47 @@ export function LoginPage() {
           </div>
         </div>
 
-        {step === 'email' && (
+        {gate === 'join' && (
+          <WaitlistJoinForm
+            email={email}
+            error={error}
+            submitting={submitting}
+            onEmailChange={setEmail}
+            onSubmit={handleJoinWaitlist}
+            onSignInClick={() => {
+              setGate('login')
+              setStep('email')
+              setError(null)
+            }}
+          />
+        )}
+
+        {gate === 'joined' && (
+          <WaitlistJoinedMessage
+            email={email}
+            status={waitlistStatus}
+            onSignInClick={() => {
+              setGate('login')
+              setStep('email')
+              setError(null)
+            }}
+          />
+        )}
+
+        {gate === 'login' && step === 'email' && (
           <form onSubmit={handleSendLogin} className="space-y-4">
+            {waitlistOn && (
+              <button
+                type="button"
+                className="text-sm font-medium text-brand"
+                onClick={() => {
+                  setGate('join')
+                  setError(null)
+                }}
+              >
+                ← Back to waitlist
+              </button>
+            )}
             <label className="block">
               <span className="text-sm font-medium text-content">Email address</span>
               <input
@@ -112,7 +178,9 @@ export function LoginPage() {
               />
             </label>
             <p className="text-xs text-faint">
-              We&apos;ll email you a sign-in link. No password needed.
+              {waitlistOn
+                ? 'For approved emails only — we’ll send a sign-in link, no password needed.'
+                : 'We&apos;ll email you a sign-in link. No password needed.'}
             </p>
             {error && <p className="text-sm text-danger">{error}</p>}
             <button type="submit" disabled={submitting} className="btn-primary w-full py-3.5">
@@ -131,7 +199,7 @@ export function LoginPage() {
           </form>
         )}
 
-        {step === 'check-email' && (
+        {gate === 'login' && step === 'check-email' && (
           <div className="space-y-4 text-center">
             <div className="rounded-2xl border border-brand/30 bg-brand-soft p-5 text-on-brand-soft">
               <Mail size={28} className="mx-auto" aria-hidden />
@@ -182,7 +250,7 @@ export function LoginPage() {
           </div>
         )}
 
-        {step === 'code' && (
+        {gate === 'login' && step === 'code' && (
           <form onSubmit={handleVerifyCode} className="space-y-4">
             <p className="text-center text-sm text-muted">
               Enter the 6-digit code from your email (if your email included one)
@@ -225,7 +293,7 @@ export function LoginPage() {
           </form>
         )}
 
-        {step === 'password' && (
+        {gate === 'login' && step === 'password' && (
           <form onSubmit={handlePasswordSignIn} className="space-y-4">
             <label className="block">
               <span className="text-sm font-medium text-content">Email address</span>
@@ -281,7 +349,7 @@ export function LoginPage() {
           </form>
         )}
 
-        {step === 'forgot-password' && (
+        {gate === 'login' && step === 'forgot-password' && (
           <form onSubmit={handleForgotPassword} className="space-y-4">
             <p className="text-center text-sm text-muted">
               Enter your email and we&apos;ll send you a link to reset your password.
@@ -316,7 +384,7 @@ export function LoginPage() {
           </form>
         )}
 
-        {step === 'forgot-password-sent' && (
+        {gate === 'login' && step === 'forgot-password-sent' && (
           <div className="space-y-4 text-center">
             <div className="rounded-2xl border border-brand/30 bg-brand-soft p-5 text-on-brand-soft">
               <Mail size={28} className="mx-auto" aria-hidden />

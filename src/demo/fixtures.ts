@@ -11,6 +11,7 @@ import type {
 export const DEMO_USER_ID = '00000000-0000-4000-8000-000000000001'
 export const DEMO_HOUSEHOLD_ID = '00000000-0000-4000-8000-000000000002'
 export const DEMO_VEHICLE_ID = '00000000-0000-4000-8000-000000000003'
+export const DEMO_VEHICLE_ID_2 = '00000000-0000-4000-8000-000000000006'
 export const DEMO_VISIT_REVIEW_ID = '00000000-0000-4000-8000-000000000004'
 export const DEMO_VISIT_CONFIRMED_ID = '00000000-0000-4000-8000-000000000005'
 
@@ -29,6 +30,25 @@ export const demoVehicle: Vehicle = {
   model: 'Passat',
   vin: null,
   created_at: '2026-01-01T00:00:00Z',
+}
+
+export const demoVehicle2: Vehicle = {
+  id: DEMO_VEHICLE_ID_2,
+  household_id: DEMO_HOUSEHOLD_ID,
+  nickname: 'CR-V',
+  year: 2018,
+  make: 'Honda',
+  model: 'CR-V',
+  vin: null,
+  created_at: '2026-02-01T00:00:00Z',
+}
+
+/** Prefill for journey screenshot on the Cars page. */
+export const demoAddVehicleDraft = {
+  nickname: 'Weekend truck',
+  year: '2016',
+  make: 'Ford',
+  model: 'F-150',
 }
 
 export const demoMembers: HouseholdMember[] = [
