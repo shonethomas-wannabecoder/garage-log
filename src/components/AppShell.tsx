@@ -12,7 +12,7 @@ const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
 export function AppShell() {
   return (
     <div className="flex min-h-full flex-col">
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
+      <main id="app-main" className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
         <Outlet />
       </main>
       <nav

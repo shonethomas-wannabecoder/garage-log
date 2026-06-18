@@ -26,11 +26,18 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  demoUser,
+}: {
+  children: ReactNode
+  demoUser?: User | null
+}) {
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(demoUser === undefined)
 
   useEffect(() => {
+    if (demoUser !== undefined) return
     if (!isSupabaseConfigured) {
       setLoading(false)
       return
@@ -49,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [demoUser])
 
   const sendEmailLogin = useCallback(async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
@@ -99,10 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      session,
-      user: session?.user ?? null,
-      loading,
-      configured: isSupabaseConfigured,
+      session: demoUser !== undefined ? null : session,
+      user: demoUser !== undefined ? demoUser : (session?.user ?? null),
+      loading: demoUser !== undefined ? false : loading,
+      configured: demoUser !== undefined ? true : isSupabaseConfigured,
       sendEmailLogin,
       verifyEmailCode,
       signInWithPassword,
@@ -111,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updatePassword,
       signOut,
     }),
-    [session, loading, sendEmailLogin, verifyEmailCode, signInWithPassword, signUpWithPassword, requestPasswordReset, updatePassword, signOut],
+    [demoUser, session, loading, sendEmailLogin, verifyEmailCode, signInWithPassword, signUpWithPassword, requestPasswordReset, updatePassword, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

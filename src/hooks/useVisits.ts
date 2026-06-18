@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useDemoData } from '../demo/DemoDataProvider'
 import { supabase } from '../lib/supabase'
 import type {
   Attachment,
@@ -19,10 +20,16 @@ export interface CategoryHistory {
 }
 
 export function useCategoryHistory(vehicleId: string | null) {
+  const demo = useDemoData()
   const [history, setHistory] = useState<Record<string, CategoryHistory>>({})
   const [loading, setLoading] = useState(false)
 
   const refresh = useCallback(async () => {
+    if (demo) {
+      setHistory(demo.categoryHistory)
+      setLoading(false)
+      return
+    }
     if (!vehicleId) {
       setHistory({})
       return
@@ -67,7 +74,7 @@ export function useCategoryHistory(vehicleId: string | null) {
     }
     setHistory(map)
     setLoading(false)
-  }, [vehicleId])
+  }, [vehicleId, demo])
 
   useEffect(() => {
     void refresh()
@@ -77,11 +84,20 @@ export function useCategoryHistory(vehicleId: string | null) {
 }
 
 export function useVisits(vehicleId: string | null) {
+  const demo = useDemoData()
   const [visits, setVisits] = useState<ServiceVisit[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
+    if (demo) {
+      setVisits(
+        demo.confirmedVisits.filter((v) => !vehicleId || v.vehicle_id === vehicleId),
+      )
+      setLoading(false)
+      setError(null)
+      return
+    }
     if (!vehicleId) {
       setVisits([])
       return
@@ -98,7 +114,7 @@ export function useVisits(vehicleId: string | null) {
     if (fetchError) setError(fetchError.message)
     else setVisits((data ?? []) as ServiceVisit[])
     setLoading(false)
-  }, [vehicleId])
+  }, [vehicleId, demo])
 
   useEffect(() => {
     void refresh()
@@ -108,10 +124,16 @@ export function useVisits(vehicleId: string | null) {
 }
 
 export function usePendingVisits(vehicleId: string | null) {
+  const demo = useDemoData()
   const [visits, setVisits] = useState<ServiceVisit[]>([])
   const [loading, setLoading] = useState(false)
 
   const refresh = useCallback(async () => {
+    if (demo) {
+      setVisits(demo.pendingVisits)
+      setLoading(false)
+      return
+    }
     if (!vehicleId) {
       setVisits([])
       return
@@ -126,7 +148,7 @@ export function usePendingVisits(vehicleId: string | null) {
 
     setVisits((data ?? []) as ServiceVisit[])
     setLoading(false)
-  }, [vehicleId])
+  }, [vehicleId, demo])
 
   useEffect(() => {
     void refresh()
@@ -136,6 +158,7 @@ export function usePendingVisits(vehicleId: string | null) {
 }
 
 export function useVisitDetail(visitId: string | undefined) {
+  const demo = useDemoData()
   const [visit, setVisit] = useState<ServiceVisit | null>(null)
   const [lineItems, setLineItems] = useState<LineItem[]>([])
   const [attachments, setAttachments] = useState<Attachment[]>([])
@@ -143,6 +166,15 @@ export function useVisitDetail(visitId: string | undefined) {
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
+    if (demo) {
+      const demoVisit = demo.visitById(visitId)
+      setVisit(demoVisit)
+      setLineItems(demo.lineItemsForVisit(visitId))
+      setAttachments(demo.attachmentsForVisit(visitId))
+      setError(demoVisit ? null : 'Visit not found')
+      setLoading(false)
+      return
+    }
     if (!visitId) {
       setVisit(null)
       setLineItems([])
@@ -163,7 +195,7 @@ export function useVisitDetail(visitId: string | undefined) {
     setLineItems((itemsRes.data ?? []) as LineItem[])
     setAttachments((attachRes.data ?? []) as Attachment[])
     setLoading(false)
-  }, [visitId])
+  }, [visitId, demo])
 
   useEffect(() => {
     void refresh()

@@ -29,7 +29,13 @@ const HouseholdContext = createContext<HouseholdContextValue | null>(null)
 
 const VEHICLE_STORAGE_KEY = 'garage-log-selected-vehicle'
 
-export function HouseholdProvider({ children }: { children: ReactNode }) {
+export function HouseholdProvider({
+  children,
+  demoSnapshot,
+}: {
+  children: ReactNode
+  demoSnapshot?: HouseholdContextValue
+}) {
   const { user, configured } = useAuth()
   const [household, setHousehold] = useState<Household | null>(null)
   const [members, setMembers] = useState<HouseholdMember[]>([])
@@ -47,6 +53,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refresh = useCallback(async () => {
+    if (demoSnapshot) return
     if (!user || !configured) {
       setHousehold(null)
       setMembers([])
@@ -96,9 +103,10 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     }
 
     setLoading(false)
-  }, [user, configured, selectedVehicleId, setSelectedVehicleId])
+  }, [user, configured, selectedVehicleId, setSelectedVehicleId, demoSnapshot])
 
   useEffect(() => {
+    if (demoSnapshot) return
     void refresh()
   }, [user?.id, configured]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -168,7 +176,9 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     ],
   )
 
-  return <HouseholdContext.Provider value={value}>{children}</HouseholdContext.Provider>
+  return (
+    <HouseholdContext.Provider value={demoSnapshot ?? value}>{children}</HouseholdContext.Provider>
+  )
 }
 
 export function useHousehold() {

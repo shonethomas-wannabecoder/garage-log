@@ -13,6 +13,7 @@ import { VehiclesPage } from './pages/VehiclesPage'
 import { VisitPage } from './pages/VisitPage'
 import { ReviewVisitPage } from './pages/ReviewVisitPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { JourneyDemoLayout } from './demo/JourneyDemoLayout'
 
 function ProtectedRoutes() {
   const { user, loading, configured } = useAuth()
@@ -53,6 +54,14 @@ export default function App() {
           <Route path="/setup" element={<SetupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/__journey__" element={<JourneyDemoLayout />}>
+            <Route element={<AppShell />}>
+              <Route index element={<HomePage />} />
+              <Route path="compare" element={<ComparePage />} />
+              <Route path="visits/new" element={<NewVisitPage />} />
+              <Route path="visits/:visitId/review" element={<ReviewVisitPage />} />
+            </Route>
+          </Route>
           <Route path="/*" element={<ProtectedRoutes />} />
         </Routes>
       </BrowserRouter>

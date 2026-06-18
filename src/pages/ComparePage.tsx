@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, X, Flag, History, Sparkles, CircleAlert, Mic, MicOff } from 'lucide-react'
 import { VehicleSelect } from '../components/VehicleSelect'
+import { useDemoData } from '../demo/DemoDataProvider'
 import { CategoryChip, PageHeader } from '../components/ui'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { useSpeechInput } from '../hooks/useSpeechInput'
@@ -47,11 +48,14 @@ const VERDICT_STYLE: Record<Verdict, { label: string; cls: string }> = {
 }
 
 export function ComparePage() {
+  const demo = useDemoData()
   const { selectedVehicleId, vehicles } = useHousehold()
   const { history } = useCategoryHistory(selectedVehicleId)
   const { visits } = useVisits(selectedVehicleId)
 
-  const [items, setItems] = useState<Recommended[]>([])
+  const [items, setItems] = useState<Recommended[]>(() =>
+    demo ? demo.compareSeed.map((item) => ({ ...item })) : [],
+  )
   const [category, setCategory] = useState<ServiceCategory>('oil_fluid')
   const [description, setDescription] = useState('')
   const { isSupported, isListening, error: speechError, start, stop } = useSpeechInput()

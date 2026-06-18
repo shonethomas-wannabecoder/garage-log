@@ -2,6 +2,7 @@ import { type FormEvent, useRef, useState } from 'react'
 import { Camera, ImagePlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { VehicleSelect } from '../components/VehicleSelect'
+import { useDemoData } from '../demo/DemoDataProvider'
 import { useAuth } from '../contexts/AuthContext'
 import { useHousehold } from '../contexts/HouseholdContext'
 import {
@@ -29,6 +30,7 @@ export function NewVisitPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { household, selectedVehicleId, vehicles } = useHousehold()
+  const demo = useDemoData()
   const [mode, setMode] = useState<Mode>('scan')
   const [serviceDate, setServiceDate] = useState(new Date().toISOString().slice(0, 10))
   const [odometer, setOdometer] = useState('')
@@ -175,6 +177,9 @@ export function NewVisitPage() {
     )
   }
 
+  const demoPageNames = demo?.journeyScreen === 'log' ? demo.logPageNames : []
+  const pageCount = files.length || demoPageNames.length
+
   return (
     <div className="space-y-5">
       <PageHeader title="Log service" subtitle="Upload a bill for AI parsing, or enter details manually." />
@@ -235,7 +240,7 @@ export function NewVisitPage() {
               className="btn-primary flex items-center justify-center gap-2 py-3 text-sm"
             >
               <Camera size={18} aria-hidden />
-              {files.length ? 'Add page' : 'Take photo'}
+              {pageCount ? 'Add page' : 'Take photo'}
             </button>
             <button
               type="button"
@@ -248,23 +253,25 @@ export function NewVisitPage() {
             </button>
           </div>
 
-          {files.length > 0 && (
+          {pageCount > 0 && (
             <ul className="space-y-1.5">
-              {files.map((f, index) => (
+              {(files.length ? files.map((f) => f.name) : demoPageNames).map((name, index) => (
                 <li
-                  key={`${f.name}-${index}`}
+                  key={`${name}-${index}`}
                   className="card flex items-center justify-between gap-2 px-3 py-2 text-sm"
                 >
                   <span className="truncate text-content">
-                    Page {index + 1}: {f.name}
+                    Page {index + 1}: {name}
                   </span>
-                  <button
-                    type="button"
-                    className="shrink-0 text-xs font-medium text-danger"
-                    onClick={() => removeFile(index)}
-                  >
-                    Remove
-                  </button>
+                  {files.length > 0 && (
+                    <button
+                      type="button"
+                      className="shrink-0 text-xs font-medium text-danger"
+                      onClick={() => removeFile(index)}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -274,8 +281,8 @@ export function NewVisitPage() {
             <strong className="text-muted">Tip:</strong> Add every page of a multi-page bill (up to 10). Use Take photo for iPhone — library photos are often HEIC.
           </p>
           {error && <p className="text-sm text-danger">{error}</p>}
-          <button type="submit" disabled={saving || !files.length} className="btn-primary w-full disabled:opacity-50">
-            {saving ? 'Reading invoice…' : `Upload & parse${files.length > 1 ? ` (${files.length} pages)` : ''}`}
+          <button type="submit" disabled={saving || !pageCount} className="btn-primary w-full disabled:opacity-50">
+            {saving ? 'Reading invoice…' : `Upload & parse${pageCount > 1 ? ` (${pageCount} pages)` : ''}`}
           </button>
         </form>
       ) : (

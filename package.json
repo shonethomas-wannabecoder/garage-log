@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "capture:journey": "npm run build && node scripts/capture-journey-screenshots.mjs",
     "supabase:login": "supabase login",
     "supabase:deploy": "supabase functions deploy parse-invoice --project-ref rmsqkjkpatjjpfcyjbos"
   },
@@ -34,6 +35,7 @@
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
+    "playwright": "^1.58.2",
     "vite": "^8.0.12",
     "vite-plugin-pwa": "^1.3.0"
   }
