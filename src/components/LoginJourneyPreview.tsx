@@ -45,28 +45,39 @@ export function LoginJourneyPreview() {
         </p>
       </div>
 
-      <div className="relative mx-auto mt-6 max-w-lg">
-        <div className="flex gap-3 overflow-x-auto px-1 pb-3 snap-x snap-mandatory scroll-px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative mx-auto mt-6 w-full max-w-lg">
+        <div
+          className="flex items-stretch gap-4 overflow-x-auto pb-3 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{
+            paddingInline: 'max(1rem, calc(50% - min(39vw, 7.5rem)))',
+            scrollPaddingInline: 'max(1rem, calc(50% - min(39vw, 7.5rem)))',
+          }}
+        >
           {JOURNEY_STEPS.map((item) => (
-            <figure key={item.step} className="w-[min(78vw,240px)] shrink-0 snap-center">
-              <div className="card overflow-hidden p-2">
-                <div className="mb-3 flex items-center gap-2 px-1">
+            <figure
+              key={item.step}
+              className="flex w-[min(78vw,15rem)] shrink-0 snap-center flex-col"
+            >
+              <div className="card flex h-full flex-col p-3">
+                <div className="mb-3 flex min-h-7 items-center gap-2">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-brand-fg">
                     {item.step}
                   </span>
                   <p className="text-sm font-semibold text-content">{item.title}</p>
                 </div>
-                <div className="overflow-hidden rounded-xl border border-line bg-bg">
+
+                <div className="aspect-[390/844] overflow-hidden rounded-xl border border-line bg-bg">
                   <img
                     src={item.image}
                     alt={item.alt}
                     width={390}
                     height={844}
                     loading="lazy"
-                    className="block w-full"
+                    className="h-full w-full object-cover object-top"
                   />
                 </div>
-                <figcaption className="px-1 pt-3">
+
+                <figcaption className="mt-3 flex min-h-[2.75rem] items-start">
                   <p className="text-xs leading-relaxed text-muted">{item.caption}</p>
                 </figcaption>
               </div>
