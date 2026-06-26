@@ -3,6 +3,7 @@ import { AlertCircle, ClipboardCheck, Search } from 'lucide-react'
 import { NextFactoryServiceCard } from '../components/NextFactoryServiceCard'
 import { LastServiceCard } from '../components/LastServiceCard'
 import { VehicleSelect } from '../components/VehicleSelect'
+import { VehicleShopConcerns } from '../components/VehicleShopConcerns'
 import { PageHeader } from '../components/ui'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { useNextFactoryService } from '../hooks/useNextFactoryService'
@@ -26,6 +27,8 @@ export function HomePage() {
       />
 
       <VehicleSelect />
+
+      <VehicleShopConcerns />
 
       {pendingVisits.length > 0 && (
         <section className="rounded-2xl border border-warn/40 bg-warn-soft p-4">

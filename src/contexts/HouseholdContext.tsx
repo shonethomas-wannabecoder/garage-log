@@ -22,6 +22,7 @@ interface HouseholdContextValue {
   refresh: () => Promise<void>
   updateHouseholdName: (name: string) => Promise<{ error: string | null }>
   addVehicle: (input: Omit<Vehicle, 'id' | 'household_id' | 'created_at'>) => Promise<{ error: string | null }>
+  updateVehicleShopConcerns: (id: string, shopConcerns: string | null) => Promise<{ error: string | null }>
   deleteVehicle: (id: string) => Promise<{ error: string | null }>
 }
 
@@ -147,6 +148,22 @@ export function HouseholdProvider({
     [refresh],
   )
 
+  const updateVehicleShopConcerns = useCallback(
+    async (id: string, shopConcerns: string | null) => {
+      const { error: updateError } = await supabase
+        .from('vehicles')
+        .update({ shop_concerns: shopConcerns })
+        .eq('id', id)
+      if (!updateError) {
+        setVehicles((prev) =>
+          prev.map((v) => (v.id === id ? { ...v, shop_concerns: shopConcerns } : v)),
+        )
+      }
+      return { error: updateError?.message ?? null }
+    },
+    [],
+  )
+
   const value = useMemo(
     () => ({
       household,
@@ -159,6 +176,7 @@ export function HouseholdProvider({
       refresh,
       updateHouseholdName,
       addVehicle,
+      updateVehicleShopConcerns,
       deleteVehicle,
     }),
     [
@@ -172,6 +190,7 @@ export function HouseholdProvider({
       refresh,
       updateHouseholdName,
       addVehicle,
+      updateVehicleShopConcerns,
       deleteVehicle,
     ],
   )

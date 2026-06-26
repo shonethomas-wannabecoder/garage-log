@@ -40,6 +40,7 @@ export function JourneyDemoLayout() {
           refresh: async () => {},
           updateHouseholdName: async () => ({ error: null }),
           addVehicle: async () => ({ error: null }),
+          updateVehicleShopConcerns: async () => ({ error: null }),
           deleteVehicle: async () => ({ error: null }),
         }}
       >

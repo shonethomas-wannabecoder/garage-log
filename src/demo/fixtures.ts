@@ -29,6 +29,7 @@ export const demoVehicle: Vehicle = {
   make: 'Volkswagen',
   model: 'Passat',
   vin: null,
+  shop_concerns: null,
   created_at: '2026-01-01T00:00:00Z',
 }
 
@@ -40,6 +41,7 @@ export const demoVehicle2: Vehicle = {
   make: 'Honda',
   model: 'CR-V',
   vin: null,
+  shop_concerns: null,
   created_at: '2026-02-01T00:00:00Z',
 }
 

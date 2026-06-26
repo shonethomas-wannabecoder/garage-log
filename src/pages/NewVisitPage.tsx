@@ -2,6 +2,7 @@ import { type FormEvent, useRef, useState } from 'react'
 import { Camera, ImagePlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { VehicleSelect } from '../components/VehicleSelect'
+import { VehicleShopConcerns } from '../components/VehicleShopConcerns'
 import { useDemoData } from '../demo/DemoDataProvider'
 import { useAuth } from '../contexts/AuthContext'
 import { useHousehold } from '../contexts/HouseholdContext'
@@ -185,6 +186,8 @@ export function NewVisitPage() {
       <PageHeader title="Log service" subtitle="Upload a bill for AI parsing, or enter details manually." />
 
       <VehicleSelect />
+
+      <VehicleShopConcerns />
 
       <div className="flex gap-1 rounded-xl border border-line bg-surface-2 p-1">
         <button

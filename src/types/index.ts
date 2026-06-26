@@ -36,6 +36,7 @@ export interface Vehicle {
   make: string | null
   model: string | null
   vin: string | null
+  shop_concerns: string | null
   created_at: string
 }
 

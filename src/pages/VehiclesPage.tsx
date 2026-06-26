@@ -28,6 +28,7 @@ export function VehiclesPage() {
       make: make.trim() || null,
       model: model.trim() || null,
       vin: null,
+      shop_concerns: null,
     })
     if (result.error) setError(result.error)
     else {
