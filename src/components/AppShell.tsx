@@ -5,16 +5,20 @@ export function AppShell() {
   const { pathname } = useLocation()
   const base = pathname.startsWith('/__journey__') ? '/__journey__' : ''
 
-  const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
+  const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean; primary?: boolean }[] = [
     { to: `${base}/`, label: 'Home', icon: Home, end: true },
-    { to: `${base}/visits/new`, label: 'Log', icon: Camera },
     { to: `${base}/search`, label: 'Search', icon: Search },
+    { to: `${base}/visits/new`, label: 'Log', icon: Camera, primary: true },
     { to: `${base}/vehicles`, label: 'Cars', icon: Car },
     { to: `${base}/household`, label: 'Family', icon: Users },
   ]
   return (
     <div className="flex min-h-full flex-col">
-      <main id="app-main" className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
+      <main
+        id="app-main"
+        className="mx-auto w-full max-w-lg flex-1 px-4 pt-5"
+        style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}
+      >
         <Outlet />
       </main>
       <nav
@@ -28,29 +32,45 @@ export function AppShell() {
             background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
           }}
         >
-          {tabs.map(({ to, label, icon: Icon, end }) => (
+          {tabs.map(({ to, label, icon: Icon, end, primary }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               aria-label={label}
               className={({ isActive }) =>
-                `flex flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[10px] font-medium transition-colors ${
+                `flex flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] font-medium transition-colors ${
                   isActive ? 'text-brand' : 'text-faint'
                 }`
               }
             >
-              {({ isActive }) => (
-                <>
-                  <span
-                    className="flex h-9 w-9 items-center justify-center rounded-full transition-colors"
-                    style={isActive ? { background: 'var(--brand-soft)' } : undefined}
-                  >
-                    <Icon size={21} strokeWidth={2} aria-hidden />
-                  </span>
-                  {label}
-                </>
-              )}
+              {({ isActive }) =>
+                primary ? (
+                  <>
+                    <span
+                      className="-mt-7 flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform active:scale-95"
+                      style={{
+                        background: 'var(--grad)',
+                        boxShadow: '0 8px 22px var(--brand-glow)',
+                        border: '3px solid var(--bg)',
+                      }}
+                    >
+                      <Icon size={22} strokeWidth={2.25} aria-hidden />
+                    </span>
+                    {label}
+                  </>
+                ) : (
+                  <>
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+                      style={isActive ? { background: 'var(--brand-soft)' } : undefined}
+                    >
+                      <Icon size={21} strokeWidth={2} aria-hidden />
+                    </span>
+                    {label}
+                  </>
+                )
+              }
             </NavLink>
           ))}
         </div>

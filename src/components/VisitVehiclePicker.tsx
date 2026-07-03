@@ -6,7 +6,10 @@ import type { Vehicle } from '../types'
 
 export function vehicleLabel(v: Vehicle): string {
   const ymm = [v.year, v.make, v.model].filter(Boolean).join(' ')
-  return ymm ? `${v.nickname} (${ymm})` : v.nickname
+  if (!ymm) return v.nickname
+  // Avoid "Passat (2020 Volkswagen Passat)" — skip the nickname when it's already in the YMM
+  if (ymm.toLowerCase().includes(v.nickname.trim().toLowerCase())) return ymm
+  return `${v.nickname} — ${ymm}`
 }
 
 export function VisitVehiclePicker({

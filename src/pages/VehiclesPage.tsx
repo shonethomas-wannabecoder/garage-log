@@ -1,10 +1,11 @@
 import { type FormEvent, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Trash2 } from 'lucide-react'
+import { AlertTriangle, Trash2 } from 'lucide-react'
 import { demoAddVehicleDraft } from '../demo/fixtures'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { PageHeader } from '../components/ui'
 import { BrandAvatar } from '../components/BrandAvatar'
+import type { Vehicle } from '../types'
 
 export function VehiclesPage() {
   const { pathname } = useLocation()
@@ -16,6 +17,16 @@ export function VehiclesPage() {
   const [model, setModel] = useState(draft?.model ?? '')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Vehicle | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleConfirmDelete() {
+    if (!pendingDelete) return
+    setDeleting(true)
+    await deleteVehicle(pendingDelete.id)
+    setDeleting(false)
+    setPendingDelete(null)
+  }
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault()
@@ -59,12 +70,8 @@ export function VehiclesPage() {
             <button
               type="button"
               aria-label={`Delete ${v.nickname}`}
-              className="p-1 text-faint active:text-danger"
-              onClick={() => {
-                if (confirm(`Delete ${v.nickname}? All service history will be removed.`)) {
-                  void deleteVehicle(v.id)
-                }
-              }}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-faint transition-colors active:bg-danger-soft active:text-danger"
+              onClick={() => setPendingDelete(v)}
             >
               <Trash2 size={18} />
             </button>
@@ -107,6 +114,52 @@ export function VehiclesPage() {
           {saving ? 'Adding…' : 'Add vehicle'}
         </button>
       </form>
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-30 flex items-end justify-center bg-black/50 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-vehicle-title"
+          onClick={() => !deleting && setPendingDelete(null)}
+        >
+          <div
+            className="card w-full max-w-sm p-5"
+            style={{ background: 'var(--bg)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 text-danger">
+              <AlertTriangle size={18} aria-hidden />
+              <h2 id="delete-vehicle-title" className="text-base font-semibold text-content">
+                Delete {pendingDelete.nickname}?
+              </h2>
+            </div>
+            <p className="mt-2 text-sm text-muted">
+              This removes the vehicle and all of its service history, including invoices. This
+              can&apos;t be undone.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={deleting}
+                className="btn-ghost py-2.5 text-sm"
+                onClick={() => setPendingDelete(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                className="rounded-xl py-2.5 text-sm font-medium text-white transition-opacity active:opacity-85 disabled:opacity-50"
+                style={{ background: 'var(--danger)' }}
+                onClick={() => void handleConfirmDelete()}
+              >
+                {deleting ? 'Deleting…' : 'Delete vehicle'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

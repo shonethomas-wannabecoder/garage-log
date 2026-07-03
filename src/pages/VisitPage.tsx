@@ -90,7 +90,15 @@ export function VisitPage() {
     if (result.error) setUploadError(result.error)
   }
 
-  if (loading) return <p className="text-muted">Loading…</p>
+  if (loading) {
+    return (
+      <div className="space-y-4" role="status" aria-label="Loading visit">
+        <div className="skeleton h-20" />
+        <div className="skeleton h-32" />
+        <div className="skeleton h-32" />
+      </div>
+    )
+  }
   if (error || !visit) return <p className="text-danger">{error ?? 'Visit not found'}</p>
 
   if (visit.parse_status !== 'confirmed') {
@@ -179,7 +187,7 @@ export function VisitPage() {
               type="button"
               disabled={uploading}
               onClick={() => libraryInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-sm font-medium text-content disabled:opacity-50"
+              className="btn-ghost flex items-center justify-center gap-2 py-3 text-sm"
             >
               <ImagePlus size={18} aria-hidden />
               Choose files

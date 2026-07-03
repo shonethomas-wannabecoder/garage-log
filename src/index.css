@@ -261,11 +261,17 @@ html.dark .chip-red {
     box-shadow: 0 8px 22px var(--brand-glow);
   }
   .btn-ghost {
-    @apply rounded-xl py-2.5 font-medium text-content transition-colors;
+    @apply rounded-xl py-2.5 font-medium text-content transition-colors active:bg-surface-2 disabled:opacity-50;
     background: var(--surface);
     border: 1px solid var(--line);
     backdrop-filter: var(--card-blur);
     -webkit-backdrop-filter: var(--card-blur);
+  }
+  .skeleton {
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
   }
   .accent-banner {
     position: relative;
@@ -274,5 +280,17 @@ html.dark .chip-red {
     background: var(--grad);
     color: #fff;
     box-shadow: 0 10px 30px var(--brand-glow);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
   }
 }

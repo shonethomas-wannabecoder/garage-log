@@ -1,6 +1,6 @@
 import { type FormEvent, useRef, useState } from 'react'
 import { Camera, ImagePlus } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { VehicleSelect } from '../components/VehicleSelect'
 import { VehicleShopConcerns } from '../components/VehicleShopConcerns'
 import { useDemoData } from '../demo/DemoDataProvider'
@@ -40,6 +40,8 @@ export function NewVisitPage() {
   const [totalDollars, setTotalDollars] = useState('')
   const [advisorNotes, setAdvisorNotes] = useState('')
   const [lines, setLines] = useState<LineItemDraft[]>([emptyLine()])
+  // Bumped when a line is removed so uncontrolled inputs remount with correct values
+  const [lineListVersion, setLineListVersion] = useState(0)
   const [files, setFiles] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -110,6 +112,11 @@ export function NewVisitPage() {
     setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)))
   }
 
+  function removeLine(index: number) {
+    setLines((prev) => prev.filter((_, i) => i !== index))
+    setLineListVersion((v) => v + 1)
+  }
+
   async function handleManualSubmit(e: FormEvent) {
     e.preventDefault()
     if (!selectedVehicleId || !user || !household) {
@@ -171,9 +178,12 @@ export function NewVisitPage() {
 
   if (!vehicles.length) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-4">
         <h1 className="text-2xl font-bold tracking-tight">Log service</h1>
-        <p className="text-muted">Add a vehicle under Cars before logging a visit.</p>
+        <p className="text-muted">Add a vehicle first, then log your visits against it.</p>
+        <Link to="/vehicles" className="btn-primary block w-full py-3 text-center">
+          Add a vehicle
+        </Link>
       </div>
     )
   }
@@ -183,7 +193,7 @@ export function NewVisitPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Log service" subtitle="Upload a bill for AI parsing, or enter details manually." />
+      <PageHeader title="Log service" subtitle="Snap your bill and we'll read the details, or enter them yourself." />
 
       <VehicleSelect />
 
@@ -249,7 +259,7 @@ export function NewVisitPage() {
               type="button"
               disabled={saving || files.length >= 10}
               onClick={() => libraryInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-sm font-medium text-content"
+              className="btn-ghost flex items-center justify-center gap-2 py-3 text-sm"
             >
               <ImagePlus size={18} aria-hidden />
               Choose files
@@ -281,11 +291,11 @@ export function NewVisitPage() {
           )}
 
           <p className="text-xs text-faint">
-            <strong className="text-muted">Tip:</strong> Add every page of a multi-page bill (up to 10). Use Take photo for iPhone — library photos are often HEIC.
+            <strong className="text-muted">Tip:</strong> Got a multi-page bill? Add every page (up to 10) before uploading.
           </p>
           {error && <p className="text-sm text-danger">{error}</p>}
           <button type="submit" disabled={saving || !pageCount} className="btn-primary w-full disabled:opacity-50">
-            {saving ? 'Reading invoice…' : `Upload & parse${pageCount > 1 ? ` (${pageCount} pages)` : ''}`}
+            {saving ? 'Reading your bill…' : `Read my bill${pageCount > 1 ? ` (${pageCount} pages)` : ''}`}
           </button>
         </form>
       ) : (
@@ -365,7 +375,21 @@ export function NewVisitPage() {
           <fieldset className="space-y-3">
             <legend className="font-semibold">Line items</legend>
             {lines.map((line, index) => (
-              <div key={index} className="card space-y-2 p-3">
+              <div key={`${lineListVersion}-${index}`} className="card space-y-2 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium uppercase tracking-wider text-faint">
+                    Item {index + 1}
+                  </span>
+                  {lines.length > 1 && (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-danger"
+                      onClick={() => removeLine(index)}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
                 <input
                   placeholder="Description"
                   required={index === 0}

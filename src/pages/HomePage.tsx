@@ -22,8 +22,8 @@ export function HomePage() {
     <div className="space-y-5">
       <PageHeader
         eyebrow={household?.name ?? 'My garage'}
-        title="Advisor check"
-        subtitle="Pull up what you actually had done last time."
+        title="Your garage"
+        subtitle="Know what was done — before the shop tells you what's due."
       />
 
       <VehicleSelect />
@@ -99,9 +99,16 @@ export function HomePage() {
             </div>
 
             {visitsLoading ? (
-              <p className="text-sm text-muted">Loading…</p>
+              <div className="space-y-2.5" role="status" aria-label="Loading history">
+                <div className="skeleton h-16" />
+                <div className="skeleton h-16" />
+                <div className="skeleton h-16" />
+              </div>
             ) : visits.length === 0 ? (
-              <p className="text-sm text-muted">No visits yet.</p>
+              <p className="text-sm text-muted">
+                No visits yet. Tap <strong className="font-medium text-content">Log</strong> below to
+                scan your first bill.
+              </p>
             ) : (
               <ol className="relative ml-1.5 space-y-2.5 border-l border-line pl-5">
                 {visits.map((v, i) => (

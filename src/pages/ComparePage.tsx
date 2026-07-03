@@ -106,7 +106,10 @@ export function ComparePage() {
     return (
       <div className="space-y-5">
         <PageHeader title="Advisor check" subtitle="Compare today's quote with your history." />
-        <p className="text-sm text-muted">Add a vehicle under Cars to get started.</p>
+        <p className="text-sm text-muted">Add a vehicle first — then we can check quotes against its history.</p>
+        <Link to="/vehicles" className="btn-primary block w-full py-3 text-center">
+          Add a vehicle
+        </Link>
       </div>
     )
   }

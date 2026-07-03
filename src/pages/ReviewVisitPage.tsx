@@ -83,6 +83,8 @@ export function ReviewVisitPage() {
   const [totalDollars, setTotalDollars] = useState('')
   const [advisorNotes, setAdvisorNotes] = useState('')
   const [lines, setLines] = useState<LineItemDraft[]>([emptyLine()])
+  // Bumped when lines are reset or removed so uncontrolled inputs remount with fresh defaults
+  const [lineListVersion, setLineListVersion] = useState(0)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [parseMessage, setParseMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -200,6 +202,7 @@ export function ReviewVisitPage() {
     setTotalDollars(form.totalDollars)
     setAdvisorNotes(form.advisorNotes)
     setLines(form.lines)
+    setLineListVersion((v) => v + 1)
   }, [visit, lineItems])
 
   useEffect(() => {
@@ -211,6 +214,11 @@ export function ReviewVisitPage() {
 
   function updateLine(index: number, patch: Partial<LineItemDraft>) {
     setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)))
+  }
+
+  function removeLine(index: number) {
+    setLines((prev) => prev.filter((_, i) => i !== index))
+    setLineListVersion((v) => v + 1)
   }
 
   async function handleConfirm(e: FormEvent) {
@@ -249,7 +257,15 @@ export function ReviewVisitPage() {
     else navigate(`/visits/${visitId}`)
   }
 
-  if (loading) return <p className="text-muted">Loading…</p>
+  if (loading) {
+    return (
+      <div className="space-y-4" role="status" aria-label="Loading invoice">
+        <div className="skeleton h-20" />
+        <div className="skeleton h-40" />
+        <div className="skeleton h-32" />
+      </div>
+    )
+  }
   if (error || !visit) return <p className="text-danger">{error ?? 'Visit not found'}</p>
 
   if (visit.parse_status === 'confirmed') {
@@ -438,7 +454,21 @@ export function ReviewVisitPage() {
         <fieldset className="space-y-3">
           <legend className="font-semibold">Line items</legend>
           {lines.map((line, index) => (
-            <div key={index} className="card space-y-2 p-3">
+            <div key={`${lineListVersion}-${index}`} className="card space-y-2 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wider text-faint">
+                  Item {index + 1}
+                </span>
+                {lines.length > 1 && (
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-danger"
+                    onClick={() => removeLine(index)}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
               <input
                 placeholder="Description"
                 required={index === 0}
