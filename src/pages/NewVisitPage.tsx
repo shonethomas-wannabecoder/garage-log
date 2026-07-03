@@ -195,7 +195,9 @@ export function NewVisitPage() {
     <div className="space-y-5">
       <PageHeader title="Log service" subtitle="Snap your bill and we'll read the details, or enter them yourself." />
 
-      <VehicleSelect />
+      <div className="lg:hidden">
+        <VehicleSelect />
+      </div>
 
       <VehicleShopConcerns />
 

@@ -281,6 +281,19 @@ html.dark .chip-red {
     color: #fff;
     box-shadow: 0 10px 30px var(--brand-glow);
   }
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    backdrop-filter: var(--card-blur);
+    -webkit-backdrop-filter: var(--card-blur);
+  }
+}
+
+/* On desktop (lg+) the sidebar handles spacing, so remove the bottom-tab padding */
+@media (min-width: 1024px) {
+  #app-main {
+    padding-bottom: 2rem !important;
+  }
 }
 
 @keyframes skeleton-shimmer {

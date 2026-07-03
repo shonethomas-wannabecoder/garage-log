@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Home, Camera, Search, Car, Users, type LucideIcon } from 'lucide-react'
+import { SidebarNav } from './SidebarNav'
 
 export function AppShell() {
   const { pathname } = useLocation()
@@ -12,17 +13,26 @@ export function AppShell() {
     { to: `${base}/vehicles`, label: 'Cars', icon: Car },
     { to: `${base}/household`, label: 'Family', icon: Users },
   ]
+
   return (
-    <div className="flex min-h-full flex-col">
-      <main
-        id="app-main"
-        className="mx-auto w-full max-w-lg flex-1 px-4 pt-5"
-        style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}
-      >
-        <Outlet />
-      </main>
+    <div className="flex min-h-full flex-col lg:flex-row">
+      {/* Desktop sidebar — hidden below lg */}
+      <SidebarNav />
+
+      {/* Main content — offset by sidebar width on desktop */}
+      <div className="flex-1 lg:pl-[260px]">
+        <main
+          id="app-main"
+          className="mx-auto w-full max-w-lg flex-1 px-4 pt-5 lg:max-w-3xl lg:py-8"
+          style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}
+        >
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Mobile bottom tabs — hidden at lg and above */}
       <nav
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 lg:hidden"
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
         <div

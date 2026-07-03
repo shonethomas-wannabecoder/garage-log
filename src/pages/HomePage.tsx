@@ -26,7 +26,9 @@ export function HomePage() {
         subtitle="Know what was done — before the shop tells you what's due."
       />
 
-      <VehicleSelect />
+      <div className="lg:hidden">
+        <VehicleSelect />
+      </div>
 
       <VehicleShopConcerns />
 
