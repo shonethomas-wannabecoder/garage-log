@@ -1,10 +1,11 @@
 import { type FormEvent, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { AlertTriangle, Trash2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, Trash2 } from 'lucide-react'
 import { demoAddVehicleDraft } from '../demo/fixtures'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { PageHeader } from '../components/ui'
 import { BrandAvatar } from '../components/BrandAvatar'
+import { VehicleCostSummary } from '../components/VehicleCostSummary'
 import type { Vehicle } from '../types'
 
 export function VehiclesPage() {
@@ -17,6 +18,7 @@ export function VehiclesPage() {
   const [model, setModel] = useState(draft?.model ?? '')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Vehicle | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -56,27 +58,43 @@ export function VehiclesPage() {
       <PageHeader title="Cars" subtitle="Vehicles shared with your household." />
 
       <ul className="space-y-2">
-        {vehicles.map((v) => (
-          <li key={v.id} className="card flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <BrandAvatar make={v.make} size={38} />
-              <div>
-                <p className="font-medium">{v.nickname}</p>
-                <p className="text-sm text-muted">
-                  {[v.year, v.make, v.model].filter(Boolean).join(' ') || 'No details'}
-                </p>
+        {vehicles.map((v) => {
+          const expanded = expandedId === v.id
+          return (
+            <li key={v.id} className="card px-4 py-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  onClick={() => setExpandedId(expanded ? null : v.id)}
+                  aria-expanded={expanded}
+                >
+                  <BrandAvatar make={v.make} size={38} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{v.nickname}</p>
+                    <p className="truncate text-sm text-muted">
+                      {[v.year, v.make, v.model].filter(Boolean).join(' ') || 'No details'}
+                    </p>
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`shrink-0 text-faint transition-transform ${expanded ? 'rotate-180' : ''}`}
+                    aria-hidden
+                  />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete ${v.nickname}`}
+                  className="ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-faint transition-colors active:bg-danger-soft active:text-danger"
+                  onClick={() => setPendingDelete(v)}
+                >
+                  <Trash2 size={18} />
+                </button>
               </div>
-            </div>
-            <button
-              type="button"
-              aria-label={`Delete ${v.nickname}`}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-faint transition-colors active:bg-danger-soft active:text-danger"
-              onClick={() => setPendingDelete(v)}
-            >
-              <Trash2 size={18} />
-            </button>
-          </li>
-        ))}
+              {expanded && <VehicleCostSummary vehicleId={v.id} />}
+            </li>
+          )
+        })}
       </ul>
 
       <form onSubmit={handleAdd} className="card space-y-3 p-4">
