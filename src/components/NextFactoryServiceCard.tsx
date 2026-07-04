@@ -1,61 +1,101 @@
 import { CalendarClock, ExternalLink, Gauge } from 'lucide-react'
-import { formatMileage } from '../lib/format'
+import { MileageRing } from './MileageRing'
+import { formatDate, formatMileage } from '../lib/format'
 import { VW_SERVICE_TYPE_SUMMARY, vwServiceTypeLabel } from '../lib/oemSchedules/volkswagen2020usa'
 import type { NextFactoryService } from '../lib/nextFactoryService'
+
+const MILESTONE_INTERVAL_MILES = 10_000
 
 interface Props {
   recommendation: NextFactoryService | null
   loading: boolean
   hasVisits: boolean
+  /** Service date of the visit that produced the latest odometer reading */
+  asOfDate?: string | null
 }
 
-function statusLabel(rec: NextFactoryService): string {
-  if (rec.milesUntil == null) return 'Log mileage to personalize'
+function milestoneShort(miles: number): string {
+  return miles % 1000 === 0 ? `${miles / 1000}k` : miles.toLocaleString()
+}
+
+function ringProps(rec: NextFactoryService): {
+  value: string
+  valueLabel: string
+  subLabel: string
+  fraction: number
+  tone: 'brand' | 'warn'
+} | null {
+  if (rec.milesUntil == null) return null
+  const target = milestoneShort(rec.milestoneMiles)
   if (rec.status === 'overdue') {
-    return `${Math.abs(rec.milesUntil).toLocaleString()} mi past due`
+    return {
+      value: Math.abs(rec.milesUntil).toLocaleString(),
+      valueLabel: `mi past ${target} service`,
+      subLabel: 'past due',
+      fraction: 1,
+      tone: 'warn',
+    }
   }
-  if (rec.status === 'due_now') return 'Due now'
-  return `In ${rec.milesUntil.toLocaleString()} mi`
+  const fraction = 1 - rec.milesUntil / MILESTONE_INTERVAL_MILES
+  if (rec.status === 'due_now') {
+    return {
+      value: rec.milesUntil.toLocaleString(),
+      valueLabel: `mi until ${target} service`,
+      subLabel: 'due now',
+      fraction,
+      tone: 'warn',
+    }
+  }
+  return {
+    value: rec.milesUntil.toLocaleString(),
+    valueLabel: `mi until ${target} service`,
+    subLabel: 'on track',
+    fraction,
+    tone: 'brand',
+  }
 }
 
-function statusClass(rec: NextFactoryService): string {
-  if (rec.status === 'overdue' || rec.status === 'due_now') {
-    return 'bg-warn-soft text-on-warn-soft'
-  }
-  return 'bg-brand-soft text-on-brand-soft'
-}
-
-export function NextFactoryServiceCard({ recommendation, loading, hasVisits }: Props) {
+export function NextFactoryServiceCard({ recommendation, loading, hasVisits, asOfDate }: Props) {
   if (loading) {
     return (
       <section className="card p-4">
         <div className="h-4 w-36 animate-pulse rounded bg-surface-2" />
-        <div className="mt-3 h-3 w-full animate-pulse rounded bg-surface-2" />
-        <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-surface-2" />
+        <div className="mx-auto mt-4 h-40 w-40 animate-pulse rounded-full bg-surface-2" />
+        <div className="mt-4 h-3 w-2/3 animate-pulse rounded bg-surface-2" />
       </section>
     )
   }
 
   if (!recommendation) return null
 
+  const ring = ringProps(recommendation)
+
   return (
     <section className="card space-y-3 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-brand">
-            <CalendarClock size={18} aria-hidden />
-            <h2 className="text-base font-semibold text-content">Next factory service</h2>
-          </div>
-          <p className="mt-0.5 text-xs text-faint">{recommendation.scheduleLabel}</p>
+      <div>
+        <div className="flex items-center gap-2 text-brand">
+          <CalendarClock size={18} aria-hidden />
+          <h2 className="text-base font-semibold text-content">Next factory service</h2>
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(recommendation)}`}>
-          {statusLabel(recommendation)}
-        </span>
+        <p className="mt-0.5 text-xs text-faint">{recommendation.scheduleLabel}</p>
       </div>
+
+      {ring && (
+        <div className="flex flex-col items-center">
+          <MileageRing {...ring} />
+          {recommendation.currentMiles != null && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
+              <Gauge size={13} aria-hidden />
+              Based on {formatMileage(recommendation.currentMiles)}
+              {asOfDate ? ` logged ${formatDate(asOfDate)}` : ' from your last logged visit'}
+            </p>
+          )}
+        </div>
+      )}
 
       <div>
         <p className="text-lg font-semibold">{recommendation.title}</p>
-        {recommendation.currentMiles != null && (
+        {!ring && recommendation.currentMiles != null && (
           <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
             <Gauge size={14} aria-hidden />
             Latest logged mileage: {formatMileage(recommendation.currentMiles)}

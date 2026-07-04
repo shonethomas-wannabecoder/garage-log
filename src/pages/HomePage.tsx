@@ -14,7 +14,10 @@ export function HomePage() {
   const { household, selectedVehicleId, vehicles } = useHousehold()
   const { visits, loading: visitsLoading } = useVisits(selectedVehicleId)
   const { visits: pendingVisits } = usePendingVisits(selectedVehicleId)
-  const { recommendation: nextFactoryService } = useNextFactoryService(selectedVehicleId, visits)
+  const { recommendation: nextFactoryService, currentMilesDate } = useNextFactoryService(
+    selectedVehicleId,
+    visits,
+  )
   const lastVisit = visits[0] ?? null
   const { lineItems, loading: detailLoading } = useVisitDetail(lastVisit?.id)
 
@@ -78,6 +81,7 @@ export function HomePage() {
                 recommendation={nextFactoryService}
                 loading={visitsLoading}
                 hasVisits={visits.length > 0}
+                asOfDate={currentMilesDate}
               />
             </section>
           )}

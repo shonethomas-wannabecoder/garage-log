@@ -13,10 +13,16 @@ export function useNextFactoryService(vehicleId: string | null, visits: ServiceV
     [vehicles, vehicleId],
   )
 
-  const currentMiles = useMemo(() => {
-    const readings = visits.map((v) => v.odometer).filter((o): o is number => o != null)
-    if (!readings.length) return null
-    return Math.max(...readings)
+  const { currentMiles, currentMilesDate } = useMemo(() => {
+    let miles: number | null = null
+    let date: string | null = null
+    for (const v of visits) {
+      if (v.odometer != null && (miles == null || v.odometer > miles)) {
+        miles = v.odometer
+        date = v.service_date
+      }
+    }
+    return { currentMiles: miles, currentMilesDate: date }
   }, [visits])
 
   const recommendation = useMemo(() => {
@@ -24,5 +30,5 @@ export function useNextFactoryService(vehicleId: string | null, visits: ServiceV
     return computeNextFactoryService(vehicle, currentMiles)
   }, [vehicle, currentMiles])
 
-  return { recommendation, currentMiles, vehicle }
+  return { recommendation, currentMiles, currentMilesDate, vehicle }
 }
