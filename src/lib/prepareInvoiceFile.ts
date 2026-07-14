@@ -1,5 +1,3 @@
-import heic2any from 'heic2any'
-
 const MAX_EDGE_PX = 2048
 const MAX_FILE_BYTES = 3_500_000
 const JPEG_QUALITY = 0.88
@@ -31,6 +29,8 @@ function isRasterImage(file: File): boolean {
 }
 
 async function convertViaHeic2Any(file: File): Promise<File> {
+  // heic2any bundles a full HEIC decoder (~1.3 MB), so load it only when needed.
+  const { default: heic2any } = await import('heic2any')
   const blob = new Blob([await file.arrayBuffer()], {
     type: file.type || 'image/heic',
   })

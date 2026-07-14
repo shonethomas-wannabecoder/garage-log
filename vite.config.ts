@@ -29,7 +29,17 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Login-page screenshots are large and only shown pre-auth; cache on use instead.
+        globIgnores: ['**/journey/**'],
         runtimeCaching: [
+          {
+            urlPattern: /\/journey\/.*\.png$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'journey-screens',
+              expiration: { maxEntries: 10, maxAgeSeconds: 604800 },
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
