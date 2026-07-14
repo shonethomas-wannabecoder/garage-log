@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { trackEvent } from './analytics'
 import type { WaitlistStatus } from '../types'
 
 export function isWaitlistEnabled(): boolean {
@@ -20,6 +21,8 @@ export async function joinWaitlist(
   } | null
 
   if (!row?.ok) return { ok: false, error: row?.error ?? 'Could not join waitlist' }
+
+  void trackEvent('waitlist_joined', { already_joined: row.already_joined ?? false })
 
   return {
     ok: true,

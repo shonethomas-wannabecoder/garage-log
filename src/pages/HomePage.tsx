@@ -4,22 +4,42 @@ import { NextFactoryServiceCard } from '../components/NextFactoryServiceCard'
 import { LastServiceCard } from '../components/LastServiceCard'
 import { VehicleSelect } from '../components/VehicleSelect'
 import { VehicleShopConcerns } from '../components/VehicleShopConcerns'
+import { UpdateMileageCard } from '../components/UpdateMileageCard'
+import { ReminderBadges } from '../components/ReminderBadges'
+import { GarageOverview } from '../components/GarageOverview'
+import { OfflineQueueBanner } from '../components/OfflineQueueBanner'
 import { PageHeader } from '../components/ui'
 import { useHousehold } from '../contexts/HouseholdContext'
 import { useNextFactoryService } from '../hooks/useNextFactoryService'
-import { usePendingVisits, useVisitDetail, useVisits } from '../hooks/useVisits'
+import {
+  useCategoryHistory,
+  usePendingVisits,
+  useVisitDetail,
+  useVisits,
+} from '../hooks/useVisits'
+import { buildReminders } from '../lib/reminders'
+import { trackEvent } from '../lib/analytics'
 import { formatDate, formatMoney } from '../lib/format'
+import { useEffect, useMemo } from 'react'
 
 export function HomePage() {
   const { household, selectedVehicleId, vehicles } = useHousehold()
   const { visits, loading: visitsLoading } = useVisits(selectedVehicleId)
   const { visits: pendingVisits } = usePendingVisits(selectedVehicleId)
-  const { recommendation: nextFactoryService, currentMilesDate } = useNextFactoryService(
-    selectedVehicleId,
-    visits,
-  )
+  const { recommendation: nextFactoryService, currentMiles, currentMilesDate } =
+    useNextFactoryService(selectedVehicleId, visits)
+  const { history } = useCategoryHistory(selectedVehicleId)
   const lastVisit = visits[0] ?? null
   const { lineItems, loading: detailLoading } = useVisitDetail(lastVisit?.id)
+
+  const reminders = useMemo(
+    () => buildReminders(history, currentMiles),
+    [history, currentMiles],
+  )
+
+  useEffect(() => {
+    void trackEvent('home_viewed', { vehicle_count: vehicles.length })
+  }, [vehicles.length])
 
   return (
     <div className="space-y-5">
@@ -29,9 +49,17 @@ export function HomePage() {
         subtitle="Know what was done — before the shop tells you what's due."
       />
 
+      <GarageOverview />
+
+      <OfflineQueueBanner />
+
       <div className="lg:hidden">
         <VehicleSelect />
       </div>
+
+      <UpdateMileageCard vehicleId={selectedVehicleId} />
+
+      <ReminderBadges reminders={reminders} />
 
       <VehicleShopConcerns />
 

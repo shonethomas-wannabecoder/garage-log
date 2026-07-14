@@ -1,7 +1,6 @@
 import { CalendarClock, ExternalLink, Gauge } from 'lucide-react'
 import { MileageRing } from './MileageRing'
 import { formatDate, formatMileage } from '../lib/format'
-import { VW_SERVICE_TYPE_SUMMARY, vwServiceTypeLabel } from '../lib/oemSchedules/volkswagen2020usa'
 import type { NextFactoryService } from '../lib/nextFactoryService'
 
 const MILESTONE_INTERVAL_MILES = 10_000
@@ -10,7 +9,6 @@ interface Props {
   recommendation: NextFactoryService | null
   loading: boolean
   hasVisits: boolean
-  /** Service date of the visit that produced the latest odometer reading */
   asOfDate?: string | null
 }
 
@@ -87,7 +85,7 @@ export function NextFactoryServiceCard({ recommendation, loading, hasVisits, asO
             <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
               <Gauge size={13} aria-hidden />
               Based on {formatMileage(recommendation.currentMiles)}
-              {asOfDate ? ` logged ${formatDate(asOfDate)}` : ' from your last logged visit'}
+              {asOfDate ? ` as of ${formatDate(asOfDate)}` : ''}
             </p>
           )}
         </div>
@@ -98,16 +96,15 @@ export function NextFactoryServiceCard({ recommendation, loading, hasVisits, asO
         {!ring && recommendation.currentMiles != null && (
           <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
             <Gauge size={14} aria-hidden />
-            Latest logged mileage: {formatMileage(recommendation.currentMiles)}
+            Latest mileage: {formatMileage(recommendation.currentMiles)}
           </p>
         )}
       </div>
 
       <ul className="space-y-2 text-sm text-muted">
-        {recommendation.serviceTypes.map((type) => (
-          <li key={type}>
-            <span className="font-medium text-content">{vwServiceTypeLabel(type)}</span>
-            <span className="text-faint"> — {VW_SERVICE_TYPE_SUMMARY[type]}</span>
+        {recommendation.summaries.map((summary) => (
+          <li key={summary}>
+            <span className="font-medium text-content">{summary}</span>
           </li>
         ))}
       </ul>
@@ -123,27 +120,21 @@ export function NextFactoryServiceCard({ recommendation, loading, hasVisits, asO
         </div>
       )}
 
-      {!hasVisits && (
+      {!hasVisits && recommendation.currentMiles == null && (
         <p className="text-sm text-muted">
-          Log a service visit with mileage to see how close you are to this interval.
-        </p>
-      )}
-
-      {recommendation.milesUntil == null && hasVisits && (
-        <p className="text-sm text-muted">
-          Add mileage to your most recent visit so we can estimate when this service is due.
+          Update mileage or log a visit so we can estimate when this service is due.
         </p>
       )}
 
       <p className="text-xs text-faint">
-        Factory schedule only — not a dealer upsell list. Brake fluid is also due every 2 years regardless of mileage.{' '}
+        Factory-style schedule — not a dealer upsell list.{' '}
         <a
           href={recommendation.source.url}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-0.5 font-medium text-brand"
         >
-          Official VW source
+          Schedule source
           <ExternalLink size={12} aria-hidden />
         </a>
       </p>

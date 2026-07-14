@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Camera, ImagePlus, RefreshCw, Trash2 } from 'lucide-react'
 import { InvoicePagesGallery } from '../components/InvoicePagesGallery'
 import { VisitVehiclePicker, vehicleLabel } from '../components/VisitVehiclePicker'
@@ -269,16 +269,12 @@ export function ReviewVisitPage() {
   if (error || !visit) return <p className="text-danger">{error ?? 'Visit not found'}</p>
 
   if (visit.parse_status === 'confirmed') {
-    return (
-      <div>
-        <p className="text-muted">This visit is already confirmed.</p>
-        <Link to={`/visits/${visitId}`} className="mt-2 inline-block font-medium text-brand">
-          View visit →
-        </Link>
-      </div>
-    )
+    // Allow re-editing confirmed visits (linked from Visit detail).
+  } else {
+    // pending / needs_review continue into the form below
   }
 
+  const isEditingConfirmed = visit.parse_status === 'confirmed'
   const parseError = visit.raw_parse_json?.parse_error
   const displayError = parseMessage ?? parseError ?? null
   const emptyParse = !parsing && !hasParsedContent(visit, lines)
@@ -294,8 +290,12 @@ export function ReviewVisitPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Review invoice"
-        subtitle="Check what was read from your bill. Fix anything wrong before saving."
+        title={isEditingConfirmed ? 'Edit visit' : 'Review invoice'}
+        subtitle={
+          isEditingConfirmed
+            ? 'Update shop details, mileage, totals, or line items. Changes save to this confirmed visit.'
+            : 'Check what was read from your bill. Fix anything wrong before saving.'
+        }
       />
 
       {parsing && (
@@ -526,7 +526,7 @@ export function ReviewVisitPage() {
         {saveError && <p className="text-sm text-danger">{saveError}</p>}
 
         <button type="submit" disabled={saving || parsing} className="btn-primary w-full">
-          {saving ? 'Saving…' : 'Confirm & save'}
+          {saving ? 'Saving…' : isEditingConfirmed ? 'Save changes' : 'Confirm & save'}
         </button>
       </form>
     </div>

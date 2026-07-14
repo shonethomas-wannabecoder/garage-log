@@ -22,6 +22,11 @@ interface HouseholdContextValue {
   refresh: () => Promise<void>
   updateHouseholdName: (name: string) => Promise<{ error: string | null }>
   addVehicle: (input: Omit<Vehicle, 'id' | 'household_id' | 'created_at'>) => Promise<{ error: string | null }>
+  updateVehicle: (
+    id: string,
+    input: Partial<Pick<Vehicle, 'nickname' | 'year' | 'make' | 'model' | 'vin'>>,
+  ) => Promise<{ error: string | null }>
+  updateVehicleMileage: (id: string, miles: number) => Promise<{ error: string | null }>
   updateVehicleShopConcerns: (id: string, shopConcerns: string | null) => Promise<{ error: string | null }>
   deleteVehicle: (id: string) => Promise<{ error: string | null }>
 }
@@ -148,6 +153,34 @@ export function HouseholdProvider({
     [refresh],
   )
 
+  const updateVehicle = useCallback(
+    async (
+      id: string,
+      input: Partial<Pick<Vehicle, 'nickname' | 'year' | 'make' | 'model' | 'vin'>>,
+    ) => {
+      const { error: updateError } = await supabase.from('vehicles').update(input).eq('id', id)
+      if (!updateError) await refresh()
+      return { error: updateError?.message ?? null }
+    },
+    [refresh],
+  )
+
+  const updateVehicleMileage = useCallback(async (id: string, miles: number) => {
+    const now = new Date().toISOString()
+    const { error: updateError } = await supabase
+      .from('vehicles')
+      .update({ current_odometer: miles, odometer_updated_at: now })
+      .eq('id', id)
+    if (!updateError) {
+      setVehicles((prev) =>
+        prev.map((v) =>
+          v.id === id ? { ...v, current_odometer: miles, odometer_updated_at: now } : v,
+        ),
+      )
+    }
+    return { error: updateError?.message ?? null }
+  }, [])
+
   const updateVehicleShopConcerns = useCallback(
     async (id: string, shopConcerns: string | null) => {
       const { error: updateError } = await supabase
@@ -176,6 +209,8 @@ export function HouseholdProvider({
       refresh,
       updateHouseholdName,
       addVehicle,
+      updateVehicle,
+      updateVehicleMileage,
       updateVehicleShopConcerns,
       deleteVehicle,
     }),
@@ -190,6 +225,8 @@ export function HouseholdProvider({
       refresh,
       updateHouseholdName,
       addVehicle,
+      updateVehicle,
+      updateVehicleMileage,
       updateVehicleShopConcerns,
       deleteVehicle,
     ],

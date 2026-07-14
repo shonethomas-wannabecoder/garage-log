@@ -13,6 +13,7 @@ import { VehiclesPage } from './pages/VehiclesPage'
 import { VisitPage } from './pages/VisitPage'
 import { ReviewVisitPage } from './pages/ReviewVisitPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { WaitlistAdminPage } from './pages/WaitlistAdminPage'
 import { JourneyDemoLayout } from './demo/JourneyDemoLayout'
 
 function ProtectedRoutes() {
@@ -40,6 +41,7 @@ function ProtectedRoutes() {
           <Route path="search" element={<SearchPage />} />
           <Route path="vehicles" element={<VehiclesPage />} />
           <Route path="household" element={<HouseholdPage />} />
+          <Route path="admin/waitlist" element={<WaitlistAdminPage />} />
         </Route>
       </Routes>
     </HouseholdProvider>

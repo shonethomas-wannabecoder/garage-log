@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, X, Flag, History, Sparkles, CircleAlert, Mic, MicOff } from 'lucide-react'
 import { VehicleSelect } from '../components/VehicleSelect'
@@ -9,6 +9,7 @@ import { useSpeechInput } from '../hooks/useSpeechInput'
 import { useCategoryHistory, useVisits, type CategoryHistory } from '../hooks/useVisits'
 import { formatDate, formatMileage } from '../lib/format'
 import { guessCategoryFromText } from '../lib/suggestCategory'
+import { trackEvent } from '../lib/analytics'
 import { CATEGORY_LABELS, type ServiceCategory } from '../types'
 
 interface Recommended {
@@ -59,6 +60,10 @@ export function ComparePage() {
   const [category, setCategory] = useState<ServiceCategory>('oil_fluid')
   const [description, setDescription] = useState('')
   const { isSupported, isListening, error: speechError, start, stop } = useSpeechInput()
+
+  useEffect(() => {
+    void trackEvent('compare_opened')
+  }, [])
 
   function handleVoiceInput() {
     if (isListening) {

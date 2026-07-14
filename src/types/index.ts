@@ -37,7 +37,21 @@ export interface Vehicle {
   model: string | null
   vin: string | null
   shop_concerns: string | null
+  current_odometer: number | null
+  odometer_updated_at: string | null
   created_at: string
+}
+
+export type InviteStatus = 'pending' | 'accepted' | 'revoked'
+
+export interface HouseholdInvite {
+  id: string
+  household_id: string
+  email: string
+  invited_by: string
+  status: InviteStatus
+  created_at: string
+  accepted_at: string | null
 }
 
 export interface ServiceVisit {

@@ -12,6 +12,7 @@ import {
   invokeParseInvoice,
 } from '../hooks/useVisits'
 import { InvoiceFileError, prepareInvoiceFile } from '../lib/prepareInvoiceFile'
+import { enqueueOfflineUpload, fileToDataUrl } from '../lib/offlineQueue'
 import type { LineItemDraft, LineItemType, ServiceCategory } from '../types'
 import { CATEGORY_LABELS } from '../types'
 import { PageHeader } from '../components/ui'
@@ -61,6 +62,29 @@ export function NewVisitPage() {
 
   async function uploadAndParse(uploadFiles: File[]) {
     if (!selectedVehicleId || !household || !uploadFiles.length) return
+
+    if (!navigator.onLine) {
+      setSaving(true)
+      setError(null)
+      try {
+        const encoded = []
+        for (const f of uploadFiles) {
+          encoded.push(await fileToDataUrl(await prepareInvoiceFile(f)))
+        }
+        await enqueueOfflineUpload({
+          vehicleId: selectedVehicleId,
+          householdId: household.id,
+          files: encoded,
+        })
+        setSaving(false)
+        setFiles([])
+        setError('You’re offline — we saved the photos on this device. Open Home to upload when you’re back online.')
+      } catch (err) {
+        setSaving(false)
+        setError(err instanceof Error ? err.message : 'Could not queue offline upload')
+      }
+      return
+    }
 
     setSaving(true)
     setError(null)

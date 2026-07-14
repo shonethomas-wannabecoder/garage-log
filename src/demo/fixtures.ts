@@ -30,6 +30,8 @@ export const demoVehicle: Vehicle = {
   model: 'Passat',
   vin: null,
   shop_concerns: null,
+  current_odometer: 91966,
+  odometer_updated_at: '2026-03-20T14:00:00Z',
   created_at: '2026-01-01T00:00:00Z',
 }
 
@@ -42,6 +44,8 @@ export const demoVehicle2: Vehicle = {
   model: 'CR-V',
   vin: null,
   shop_concerns: null,
+  current_odometer: 62000,
+  odometer_updated_at: '2026-02-01T00:00:00Z',
   created_at: '2026-02-01T00:00:00Z',
 }
 

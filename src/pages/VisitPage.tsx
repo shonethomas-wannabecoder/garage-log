@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { Camera, FileText, ImagePlus } from 'lucide-react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Camera, FileText, ImagePlus, Pencil, Share2 } from 'lucide-react'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { InvoicePagesGallery } from '../components/InvoicePagesGallery'
 import { VisitVehiclePicker, vehicleLabel } from '../components/VisitVehiclePicker'
 import { CategoryChip } from '../components/ui'
@@ -105,23 +105,71 @@ export function VisitPage() {
     return <Navigate to={`/visits/${visitId}/review`} replace />
   }
 
+  const confirmed = visit
   const atPageLimit = attachments.length >= MAX_PAGES
+
+  function exportVisitSummary() {
+    const lines = [
+      `Garage Log visit`,
+      `Date: ${formatDate(confirmed.service_date)}`,
+      `Shop: ${confirmed.shop_name ?? 'Unknown'}`,
+      `Mileage: ${formatMileage(confirmed.odometer)}`,
+      `Total: ${formatMoney(confirmed.total_cents, confirmed.currency)}`,
+      confirmed.invoice_number ? `Invoice #: ${confirmed.invoice_number}` : null,
+      confirmed.advisor_notes ? `Notes: ${confirmed.advisor_notes}` : null,
+      '',
+      'Line items:',
+      ...lineItems.map(
+        (item) =>
+          `- ${item.description}${item.line_total_cents != null ? ` · ${formatMoney(item.line_total_cents)}` : ''}`,
+      ),
+    ].filter(Boolean)
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `garage-log-${confirmed.service_date}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">{formatDate(visit.service_date)}</h1>
-        <p className="mt-0.5 text-muted">{visit.shop_name ?? 'Unknown shop'}</p>
-        <p className="mt-1 text-sm text-faint">
-          {formatMileage(visit.odometer)} · {formatMoney(visit.total_cents, visit.currency)}
-        </p>
-        {visit.invoice_number && (
-          <p className="text-sm text-faint">Invoice #{visit.invoice_number}</p>
-        )}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{formatDate(confirmed.service_date)}</h1>
+            <p className="mt-0.5 text-muted">{confirmed.shop_name ?? 'Unknown shop'}</p>
+            <p className="mt-1 text-sm text-faint">
+              {formatMileage(confirmed.odometer)} · {formatMoney(confirmed.total_cents, confirmed.currency)}
+            </p>
+            {confirmed.invoice_number && (
+              <p className="text-sm text-faint">Invoice #{confirmed.invoice_number}</p>
+            )}
+          </div>
+          <div className="flex shrink-0 gap-1">
+            <Link
+              to={`/visits/${visitId}/review`}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-brand transition-colors active:bg-brand-soft"
+              aria-label="Edit visit"
+            >
+              <Pencil size={18} />
+            </Link>
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-brand transition-colors active:bg-brand-soft"
+              aria-label="Export visit summary"
+              onClick={exportVisitSummary}
+            >
+              <Share2 size={18} />
+            </button>
+          </div>
+        </div>
       </header>
 
       <VisitVehiclePicker
-        vehicleId={visit.vehicle_id}
+        vehicleId={confirmed.vehicle_id}
         onVehicleChange={handleVehicleChange}
         disabled={movingVehicle || uploading}
       />

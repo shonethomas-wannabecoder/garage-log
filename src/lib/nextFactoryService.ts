@@ -1,17 +1,10 @@
-import {
-  VW_2020_USA_SOURCE,
-  vwMilestoneAt,
-  vwMilestonesThrough,
-  vwServiceTypeLabel,
-  type VwServiceType,
-  matchesVolkswagen2020UsaSchedule,
-} from './oemSchedules/volkswagen2020usa'
+import { findOemSchedule } from './oemSchedules'
+import type { OemSource } from './oemSchedules/types'
 import type { Vehicle } from '../types'
 
 export interface NextFactoryService {
   milestoneMiles: number
   title: string
-  serviceTypes: VwServiceType[]
   serviceTypeLabels: string[]
   additionalItems: string[]
   summaries: string[]
@@ -19,30 +12,20 @@ export interface NextFactoryService {
   currentMiles: number | null
   status: 'upcoming' | 'due_now' | 'overdue'
   scheduleLabel: string
-  source: typeof VW_2020_USA_SOURCE
+  source: OemSource
 }
 
 const DUE_NOW_BUFFER_MILES = 2_500
 const OVERDUE_PAST_MILES = 1_500
 
-function formatMiles(miles: number): string {
-  return `${miles.toLocaleString()} mi`
-}
-
-function milestoneTitle(miles: number, types: VwServiceType[]): string {
-  const labels = types.map(vwServiceTypeLabel)
-  if (labels.length === 1) {
-    return `${formatMiles(miles)} — ${labels[0]}`
-  }
-  return `${formatMiles(miles)} — ${labels.join(' + ')}`
-}
-
-function findMilestone(currentMiles: number): {
+function findMilestone(
+  currentMiles: number,
+  milestones: number[],
+): {
   miles: number
   status: NextFactoryService['status']
   milesUntil: number
 } {
-  const milestones = vwMilestonesThrough(200_000)
   const upcoming = milestones.find((m) => m >= currentMiles)
   const passed = [...milestones].reverse().find((m) => m < currentMiles)
 
@@ -68,7 +51,7 @@ function findMilestone(currentMiles: number): {
     }
   }
 
-  const next = milestones[milestones.length - 1] + 10_000
+  const next = (milestones[milestones.length - 1] ?? 10_000) + 10_000
   return { miles: next, status: 'upcoming', milesUntil: next - currentMiles }
 }
 
@@ -76,46 +59,42 @@ export function computeNextFactoryService(
   vehicle: Vehicle,
   currentMiles: number | null,
 ): NextFactoryService | null {
-  if (!matchesVolkswagen2020UsaSchedule(vehicle.make, vehicle.year)) {
-    return null
-  }
+  const schedule = findOemSchedule(vehicle)
+  if (!schedule) return null
 
   const ymm = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ')
-  const scheduleLabel = ymm
-    ? `${ymm} · VW factory schedule (USA)`
-    : 'Volkswagen · factory schedule (USA)'
+  const scheduleLabel = ymm ? `${ymm} · ${schedule.label}` : schedule.label
 
   if (currentMiles == null) {
-    const first = vwMilestoneAt(10_000)
+    const first = schedule.milestoneAt(10_000)
     return {
       milestoneMiles: 10_000,
-      title: milestoneTitle(10_000, first.serviceTypes),
-      serviceTypes: first.serviceTypes,
-      serviceTypeLabels: first.serviceTypes.map(vwServiceTypeLabel),
+      title: first.title,
+      serviceTypeLabels: first.summaries,
       additionalItems: first.additionalItems,
-      summaries: first.serviceTypes.map((t) => vwServiceTypeLabel(t)),
+      summaries: first.summaries,
       milesUntil: null,
       currentMiles: null,
       status: 'upcoming',
       scheduleLabel,
-      source: VW_2020_USA_SOURCE,
+      source: schedule.source,
     }
   }
 
-  const { miles, status, milesUntil } = findMilestone(currentMiles)
-  const milestone = vwMilestoneAt(miles)
+  const milestones = schedule.milestonesThrough(200_000)
+  const { miles, status, milesUntil } = findMilestone(currentMiles, milestones)
+  const milestone = schedule.milestoneAt(miles)
 
   return {
     milestoneMiles: miles,
-    title: milestoneTitle(miles, milestone.serviceTypes),
-    serviceTypes: milestone.serviceTypes,
-    serviceTypeLabels: milestone.serviceTypes.map(vwServiceTypeLabel),
+    title: milestone.title,
+    serviceTypeLabels: milestone.summaries,
     additionalItems: milestone.additionalItems,
-    summaries: milestone.serviceTypes.map((t) => vwServiceTypeLabel(t)),
+    summaries: milestone.summaries,
     milesUntil,
     currentMiles,
     status,
     scheduleLabel,
-    source: VW_2020_USA_SOURCE,
+    source: schedule.source,
   }
 }

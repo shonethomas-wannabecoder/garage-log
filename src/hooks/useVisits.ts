@@ -543,15 +543,16 @@ export async function searchVisits(
   query: string,
 ): Promise<{ visits: ServiceVisit[]; error: string | null }> {
   const q = query.trim().toLowerCase()
-  if (!q) {
-    const { data, error } = await supabase
-      .from('service_visits')
-      .select('*')
-      .eq('vehicle_id', vehicleId)
-      .eq('parse_status', 'confirmed')
-      .order('service_date', { ascending: false })
-    return { visits: (data ?? []) as ServiceVisit[], error: error?.message ?? null }
-  }
+  const { data: allConfirmed, error: allError } = await supabase
+    .from('service_visits')
+    .select('*')
+    .eq('vehicle_id', vehicleId)
+    .eq('parse_status', 'confirmed')
+    .order('service_date', { ascending: false })
+
+  if (allError) return { visits: [], error: allError.message }
+  const visits = (allConfirmed ?? []) as ServiceVisit[]
+  if (!q) return { visits, error: null }
 
   const { data: items, error: itemsError } = await supabase
     .from('line_items')
@@ -560,16 +561,16 @@ export async function searchVisits(
 
   if (itemsError) return { visits: [], error: itemsError.message }
 
-  const visitIds = [...new Set((items ?? []).map((i) => i.service_visit_id as string))]
-  if (!visitIds.length) return { visits: [], error: null }
+  const lineMatchIds = new Set((items ?? []).map((i) => i.service_visit_id as string))
 
-  const { data: visits, error: visitsError } = await supabase
-    .from('service_visits')
-    .select('*')
-    .eq('vehicle_id', vehicleId)
-    .eq('parse_status', 'confirmed')
-    .in('id', visitIds)
-    .order('service_date', { ascending: false })
+  const filtered = visits.filter((v) => {
+    if (lineMatchIds.has(v.id)) return true
+    if (v.shop_name?.toLowerCase().includes(q)) return true
+    if (v.invoice_number?.toLowerCase().includes(q)) return true
+    if (v.advisor_notes?.toLowerCase().includes(q)) return true
+    if (v.service_date.includes(q)) return true
+    return false
+  })
 
-  return { visits: (visits ?? []) as ServiceVisit[], error: visitsError?.message ?? null }
+  return { visits: filtered, error: null }
 }

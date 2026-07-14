@@ -3,8 +3,7 @@ import { useHousehold } from '../contexts/HouseholdContext'
 import { computeNextFactoryService } from '../lib/nextFactoryService'
 import type { ServiceVisit } from '../types'
 
-// Derives the next factory-service recommendation from visits the caller already
-// has, to avoid issuing a second identical query for the same vehicle.
+/** Prefer standalone vehicle mileage when newer/higher than visit odometers. */
 export function useNextFactoryService(vehicleId: string | null, visits: ServiceVisit[]) {
   const { vehicles } = useHousehold()
 
@@ -22,8 +21,19 @@ export function useNextFactoryService(vehicleId: string | null, visits: ServiceV
         date = v.service_date
       }
     }
+
+    if (
+      vehicle?.current_odometer != null &&
+      (miles == null || vehicle.current_odometer >= miles)
+    ) {
+      return {
+        currentMiles: vehicle.current_odometer,
+        currentMilesDate: vehicle.odometer_updated_at?.slice(0, 10) ?? date,
+      }
+    }
+
     return { currentMiles: miles, currentMilesDate: date }
-  }, [visits])
+  }, [visits, vehicle])
 
   const recommendation = useMemo(() => {
     if (!vehicle) return null

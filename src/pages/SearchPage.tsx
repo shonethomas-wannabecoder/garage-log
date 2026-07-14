@@ -26,7 +26,7 @@ export function SearchPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Search" subtitle="Find past work by keyword (brakes, oil, filter…)." />
+      <PageHeader title="Search" subtitle="Find past work by keyword, shop, invoice #, or notes." />
 
       <VehicleSelect />
 
@@ -36,7 +36,7 @@ export function SearchPage() {
             <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" aria-hidden />
             <input
               type="search"
-              placeholder="Search line items…"
+              placeholder="Search line items, shops, invoice #, notes…"
               className="field pl-10"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
