@@ -59,6 +59,18 @@ export function HomePage() {
 
       <UpdateMileageCard vehicleId={selectedVehicleId} />
 
+      {vehicles.length > 0 && (visitsLoading || nextFactoryService) && (
+        <section>
+          <h2 className="mb-2 text-base font-semibold">Up next</h2>
+          <NextFactoryServiceCard
+            recommendation={nextFactoryService}
+            loading={visitsLoading}
+            hasVisits={visits.length > 0}
+            asOfDate={currentMilesDate}
+          />
+        </section>
+      )}
+
       <ReminderBadges reminders={reminders} />
 
       <VehicleShopConcerns />
@@ -101,18 +113,6 @@ export function HomePage() {
               At the shop? Check today's recommendations against your real history.
             </p>
           </Link>
-
-          {(visitsLoading || nextFactoryService) && (
-            <section>
-              <h2 className="mb-2 text-base font-semibold">Up next</h2>
-              <NextFactoryServiceCard
-                recommendation={nextFactoryService}
-                loading={visitsLoading}
-                hasVisits={visits.length > 0}
-                asOfDate={currentMilesDate}
-              />
-            </section>
-          )}
 
           <section>
             <h2 className="mb-2 text-base font-semibold">Last service</h2>
