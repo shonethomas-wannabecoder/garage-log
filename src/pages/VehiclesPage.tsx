@@ -19,7 +19,7 @@ export function VehiclesPage() {
   const [year, setYear] = useState(draft?.year ?? '')
   const [make, setMake] = useState(draft?.make ?? '')
   const [model, setModel] = useState(draft?.model ?? '')
-  const [vin, setVin] = useState('')
+  const [vin, setVin] = useState(draft?.vin ?? '')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)

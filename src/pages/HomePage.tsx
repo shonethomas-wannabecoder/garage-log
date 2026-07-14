@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { AlertCircle, ClipboardCheck, Search } from 'lucide-react'
 import { NextFactoryServiceCard } from '../components/NextFactoryServiceCard'
 import { LastServiceCard } from '../components/LastServiceCard'
@@ -23,6 +23,8 @@ import { formatDate, formatMoney } from '../lib/format'
 import { useEffect, useMemo } from 'react'
 
 export function HomePage() {
+  const { pathname } = useLocation()
+  const isJourney = pathname.startsWith('/__journey__')
   const { household, selectedVehicleId, vehicles } = useHousehold()
   const { visits, loading: visitsLoading } = useVisits(selectedVehicleId)
   const { visits: pendingVisits } = usePendingVisits(selectedVehicleId)
@@ -49,13 +51,15 @@ export function HomePage() {
         subtitle="Know what was done — before the shop tells you what's due."
       />
 
-      <GarageOverview />
+      {!isJourney && <GarageOverview />}
 
       <OfflineQueueBanner />
 
-      <div className="lg:hidden">
-        <VehicleSelect />
-      </div>
+      {!isJourney && (
+        <div className="lg:hidden">
+          <VehicleSelect />
+        </div>
+      )}
 
       <UpdateMileageCard vehicleId={selectedVehicleId} />
 

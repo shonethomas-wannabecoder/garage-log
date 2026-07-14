@@ -2,37 +2,51 @@ const JOURNEY_STEPS = [
   {
     step: 1,
     title: 'Cars',
-    caption: 'Add every vehicle in your household — one garage, multiple cars.',
+    caption: 'Add every vehicle with year, make, model, and optional VIN — then track costs per car.',
     image: '/journey/journey-1-add-vehicles.png',
-    alt: 'Garage Log Cars screen with two vehicles listed and add vehicle form',
+    alt: 'Garage Log Cars screen with two vehicles listed and add vehicle form including VIN',
   },
   {
     step: 2,
     title: 'Log',
-    caption: 'Photograph the invoice right after service.',
+    caption: 'Photograph the invoice right after service — uploads queue if you’re offline.',
     image: '/journey/journey-2-log-bill.png',
     alt: 'Garage Log log service screen with take photo and choose files',
   },
   {
     step: 3,
     title: 'Review',
-    caption: 'Confirm what was read before you save.',
+    caption: 'Confirm shop, mileage, and line items — edit visits later if something looks off.',
     image: '/journey/journey-3-review-invoice.png',
     alt: 'Garage Log review invoice screen with shop mileage and line items',
   },
   {
     step: 4,
-    title: 'History',
-    caption: 'Every visit stays on your timeline.',
+    title: 'Up next',
+    caption: 'Keep mileage current so factory schedules and reminders stay accurate.',
     image: '/journey/journey-4-home-history.png',
-    alt: 'Garage Log home screen with last service and upcoming maintenance',
+    alt: 'Garage Log home with current mileage, next factory service ring, and reminders',
   },
   {
     step: 5,
+    title: 'Search',
+    caption: 'Find past work by shop, invoice #, notes, dates, or line items.',
+    image: '/journey/journey-5-search.png',
+    alt: 'Garage Log search screen filtering visits by shop name',
+  },
+  {
+    step: 6,
     title: 'Compare',
-    caption: 'Check shop quotes against what you already had done.',
-    image: '/journey/journey-5-compare-quote.png',
+    caption: 'At the shop, check today’s quote against what you already paid for.',
+    image: '/journey/journey-6-compare-quote.png',
     alt: 'Garage Log compare a quote screen with done recently badges',
+  },
+  {
+    step: 7,
+    title: 'Family',
+    caption: 'Invite household members so everyone shares one garage log.',
+    image: '/journey/journey-7-family.png',
+    alt: 'Garage Log family screen with invite by email and pending invite',
   },
 ] as const
 
@@ -48,7 +62,7 @@ export function LoginJourneyPreview() {
           How Garage Log works
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Five quick steps from your cars to accountability.
+          Seven steps from your cars to a shared garage of record.
         </p>
       </div>
 
@@ -91,7 +105,7 @@ export function LoginJourneyPreview() {
             </figure>
           ))}
         </div>
-        <p className="text-center text-[11px] text-faint">Swipe to see all five steps</p>
+        <p className="text-center text-[11px] text-faint">Swipe to see all seven steps</p>
       </div>
     </section>
   )

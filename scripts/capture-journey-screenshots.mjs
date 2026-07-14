@@ -19,7 +19,9 @@ const shots = [
     path: '/__journey__/visits/00000000-0000-4000-8000-000000000004/review',
   },
   { file: 'journey-4-home-history.png', path: '/__journey__/' },
-  { file: 'journey-5-compare-quote.png', path: '/__journey__/compare' },
+  { file: 'journey-5-search.png', path: '/__journey__/search' },
+  { file: 'journey-6-compare-quote.png', path: '/__journey__/compare' },
+  { file: 'journey-7-family.png', path: '/__journey__/household' },
 ]
 
 const legacyFiles = [
@@ -27,6 +29,7 @@ const legacyFiles = [
   'journey-2-review-invoice.png',
   'journey-3-home-history.png',
   'journey-4-compare-quote.png',
+  'journey-5-compare-quote.png',
 ]
 
 function waitForServer(url, timeoutMs = 60_000) {

@@ -1,6 +1,7 @@
 import type {
   Attachment,
   Household,
+  HouseholdInvite,
   HouseholdMember,
   LineItem,
   ServiceCategory,
@@ -28,10 +29,10 @@ export const demoVehicle: Vehicle = {
   year: 2020,
   make: 'Volkswagen',
   model: 'Passat',
-  vin: null,
+  vin: '1VWSA7A30LC012345',
   shop_concerns: null,
-  current_odometer: 91966,
-  odometer_updated_at: '2026-03-20T14:00:00Z',
+  current_odometer: 96000,
+  odometer_updated_at: '2026-07-14T00:00:00Z',
   created_at: '2026-01-01T00:00:00Z',
 }
 
@@ -42,7 +43,7 @@ export const demoVehicle2: Vehicle = {
   year: 2018,
   make: 'Honda',
   model: 'CR-V',
-  vin: null,
+  vin: '5J6RW2H89JL012345',
   shop_concerns: null,
   current_odometer: 62000,
   odometer_updated_at: '2026-02-01T00:00:00Z',
@@ -55,7 +56,28 @@ export const demoAddVehicleDraft = {
   year: '2016',
   make: 'Ford',
   model: 'F-150',
+  vin: '1FTFW1E84GFA12345',
 }
+
+/** Prefill for journey screenshot on Search. */
+export const demoSearchQuery = 'Onion Creek'
+
+/** Prefill for journey screenshot on Family. */
+export const demoInviteDraft = {
+  email: 'alex@family.com',
+}
+
+export const demoPendingInvites: HouseholdInvite[] = [
+  {
+    id: '00000000-0000-4000-8000-000000000030',
+    household_id: DEMO_HOUSEHOLD_ID,
+    email: 'alex@family.com',
+    invited_by: DEMO_USER_ID,
+    status: 'pending',
+    created_at: '2026-07-01T00:00:00Z',
+    accepted_at: null,
+  },
+]
 
 export const demoMembers: HouseholdMember[] = [
   {

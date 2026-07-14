@@ -13,7 +13,14 @@ import {
 } from './fixtures'
 import type { Attachment, LineItem, ServiceVisit } from '../types'
 
-export type JourneyScreen = 'log' | 'review' | 'home' | 'compare' | 'vehicles'
+export type JourneyScreen =
+  | 'log'
+  | 'review'
+  | 'home'
+  | 'compare'
+  | 'vehicles'
+  | 'search'
+  | 'household'
 
 export interface DemoDataContextValue {
   confirmedVisits: ServiceVisit[]

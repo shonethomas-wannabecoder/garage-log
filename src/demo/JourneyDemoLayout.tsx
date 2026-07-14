@@ -19,6 +19,8 @@ function journeyScreenFromPath(pathname: string): JourneyScreen {
   if (pathname.includes('/review')) return 'review'
   if (pathname.includes('/compare')) return 'compare'
   if (pathname.includes('/vehicles')) return 'vehicles'
+  if (pathname.includes('/search')) return 'search'
+  if (pathname.includes('/household')) return 'household'
   return 'home'
 }
 

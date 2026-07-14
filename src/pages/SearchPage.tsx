@@ -1,20 +1,43 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { VehicleSelect } from '../components/VehicleSelect'
 import { VisitListItem } from '../components/VisitListItem'
 import { PageHeader } from '../components/ui'
 import { useHousehold } from '../contexts/HouseholdContext'
+import { useDemoData } from '../demo/DemoDataProvider'
+import { demoSearchQuery } from '../demo/fixtures'
 import { searchVisits } from '../hooks/useVisits'
 import type { ServiceVisit } from '../types'
 
 export function SearchPage() {
+  const { pathname } = useLocation()
+  const demo = useDemoData()
   const { selectedVehicleId, vehicles } = useHousehold()
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(
+    pathname === '/__journey__/search' ? demoSearchQuery : '',
+  )
   const [results, setResults] = useState<ServiceVisit[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!selectedVehicleId) return
+
+    if (demo) {
+      const q = query.trim().toLowerCase()
+      const visits = demo.confirmedVisits.filter((v) => {
+        if (!q) return true
+        if (v.shop_name?.toLowerCase().includes(q)) return true
+        if (v.invoice_number?.toLowerCase().includes(q)) return true
+        if (v.advisor_notes?.toLowerCase().includes(q)) return true
+        if (v.service_date.includes(q)) return true
+        return false
+      })
+      setResults(visits)
+      setLoading(false)
+      return
+    }
+
     const timer = setTimeout(async () => {
       setLoading(true)
       const { visits } = await searchVisits(selectedVehicleId, query)
@@ -22,7 +45,7 @@ export function SearchPage() {
       setLoading(false)
     }, 300)
     return () => clearTimeout(timer)
-  }, [selectedVehicleId, query])
+  }, [selectedVehicleId, query, demo])
 
   return (
     <div className="space-y-5">
